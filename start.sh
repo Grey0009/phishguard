@@ -94,5 +94,27 @@ echo -e "  (Press ${YELLOW}Ctrl+C${NC} anytime to stop the server)"
 echo -e "${BOLD}${CYAN}=================================================================${NC}"
 echo ""
 
+# Auto-launch browser with extension in background
+(
+  sleep 1.2
+  if [ "$(uname)" = "Darwin" ]; then
+    if [ -d "/Applications/Google Chrome.app" ]; then
+      open -a "Google Chrome" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
+    elif [ -d "/Applications/Brave Browser.app" ]; then
+      open -a "Brave Browser" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
+    elif [ -d "/Applications/Microsoft Edge.app" ]; then
+      open -a "Microsoft Edge" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
+    fi
+  elif [ "$(uname)" = "Linux" ]; then
+    if command -v google-chrome >/dev/null 2>&1; then
+      google-chrome --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+    elif command -v brave-browser >/dev/null 2>&1; then
+      brave-browser --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+    elif command -v chromium-browser >/dev/null 2>&1; then
+      chromium-browser --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+    fi
+  fi
+) &
+
 # Run backend server
 exec "$VENV_PY" "$BACKEND_DIR/run.py" --host 127.0.0.1 --port 8000
