@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PhishGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Apple Liquid Glass Tab Absorption & Refraction Mesh -->
+  <div class="apple-glass-backdrop" id="tabBackdrop" aria-hidden="true">
+    <div class="tab-capture-layer is-active" id="tabCaptureA"></div>
+    <div class="tab-capture-layer is-idle" id="tabCaptureB"></div>
+    <div class="ambient-mesh" id="ambientMesh">
+      <div class="ambient-glow glow-top" id="glowTop"></div>
+      <div class="ambient-glow glow-bottom" id="glowBottom"></div>
+      <div class="ambient-glow glow-center" id="glowCenter"></div>
+    </div>
+    <div class="glass-frost-overlay"></div>
+  </div>
+
+  <div class="popup-shell">
+    <!-- Top Navigation Bar: Apple Header with Global Protection Switch -->
+    <header class="nav-bar">
+      <div class="brand-cluster">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <div class="brand-meta">
+          <span class="brand-name">PhishGuard</span>
+          <span class="brand-sub" id="headerStatusText">Active</span>
+        </div>
+      </div>
+      <div class="header-controls">
+        <!-- Apple iOS System Toggle Switch -->
+        <label class="apple-toggle" title="Toggle PhishGuard Protection">
+          <input type="checkbox" id="globalToggle" checked>
+          <span class="apple-toggle-slider"></span>
+        </label>
+        <button id="openOptions" class="icon-action-btn" title="Settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main View Area -->
+    <main class="view-content" id="mainViewContent">
+      
+      <!-- TAB 1: STATUS / DEFENSE HERO VIEW -->
+      <section id="panel-defense" class="app-panel active">
+        <!-- Disabled / Paused Overlay Banner (shown when toggled off) -->
+        <div id="pausedBanner" class="paused-card is-hidden" hidden>
+          <div class="paused-icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+          </div>
+          <div class="paused-text">
+            <b>Protection is Paused</b>
+            <span>Web traffic is unmonitored.</span>
+          </div>
+          <button id="resumeBtn" class="resume-btn">Resume</button>
+        </div>
+
+        <!-- Hero Centerpiece: Slender Precision Liquid Glass Gauge -->
+        <div class="hero-stage" id="heroStage">
+          <div class="gauge-assembly" id="gaugeWrap">
+            <svg viewBox="0 0 120 120" class="gauge-render">
+              <circle class="gauge-track" cx="60" cy="60" r="50"/>
+              <circle class="gauge-sheen" id="gaugeGlow" cx="60" cy="60" r="50"
+                      stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+              <circle class="gauge-stroke" id="gaugeFill" cx="60" cy="60" r="50"
+                      stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+            </svg>
+            <div class="gauge-readout">
+              <span class="gauge-number" id="riskPct">–</span>
+              <span class="gauge-metric" id="pctUnit">%</span>
+              <span class="gauge-caption" id="gaugeCaption">SAFETY INDEX</span>
+            </div>
+          </div>
+          <div class="badge-holder">
+            <span id="badge" class="verdict-capsule pending">
+              <span class="indicator-dot"></span>
+              <span id="badgeText">Analyzing</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Current Domain & Telemetry Card -->
+        <div class="inset-card domain-status-card">
+          <div class="domain-details">
+            <span class="domain-title" id="domain">Waiting for active tab…</span>
+            <span class="domain-meta" id="stageMeta">Stage: Multi-Stage Telemetry</span>
+          </div>
+          <div class="domain-actions">
+            <button id="trustSiteBtn" class="trust-action-btn" title="Whitelist / trust this domain">Trust</button>
+            <button id="exportReportBtn" class="export-action-btn" title="Export Security Incident Audit Report">Export</button>
+            <button id="rescan" class="rescan-action-btn">Re-scan</button>
+          </div>
+        </div>
+
+        <!-- Analysis Pipeline Engine Showcase -->
+        <div class="inset-card pipeline-card" id="pipelineCard">
+          <div class="pipeline-header">
+            <div class="pipeline-title-wrap">
+              <span class="pipeline-badge">ANALYSIS PIPELINE</span>
+              <span class="pipeline-sub" id="pipelineModeName">URL + DOM Structure</span>
+            </div>
+            <!-- Interactive Mode Switcher Pills -->
+            <div class="pipeline-switch-pills" id="pipelinePills" role="radiogroup" aria-label="Pipeline Engine Mode">
+              <button class="pipe-pill" data-mode="url" id="pillUrl" title="URL Lexical Graph Engine">Lexical</button>
+              <button class="pipe-pill active" data-mode="auto" id="pillAuto" title="URL + DOM Structure">URL+DOM</button>
+              <button class="pipe-pill" data-mode="always" id="pillAlways" title="Deep ML Vision Ensemble">Deep ML</button>
+            </div>
+          </div>
+          <!-- Dynamic Showcase Visualization Slot -->
+          <div class="pipeline-visual-slot" id="pipelineVisualSlot"></div>
+        </div>
+
+        <!-- 3-Button Control Row: Precision Frosted Glass Radios -->
+        <div class="section-group">
+          <div class="group-header">PROTECTION MODULES</div>
+          <div class="inset-card control-row-card">
+            <!-- Phish Defense Button -->
+            <button class="glass-circle-btn active" id="ctrlShield">
+              <div class="icon-disc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <span class="disc-label">Phish Guard</span>
+            </button>
+            <!-- Stealth AdBlock Button -->
+            <button class="glass-circle-btn active" id="ctrlAdBlock">
+              <div class="icon-disc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+                </svg>
+              </div>
+              <span class="disc-label">Ad Shield</span>
+            </button>
+            <!-- Credential Guard Button -->
+            <button class="glass-circle-btn active" id="ctrlCreds">
+              <div class="icon-disc">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
+              <span class="disc-label">Cred Guard</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Detection Signals Inset Card (if flags present) -->
+        <div id="reasonsWrap" class="inset-card signals-card" hidden>
+          <div class="card-subtitle">DETECTION SIGNALS</div>
+          <ul id="reasons" class="signals-collection"></ul>
+        </div>
+
+        <p id="error" class="error-strip" hidden></p>
+        <p id="msg" class="inline-msg" role="status"></p>
+      </section>
+
+      <!-- TAB 2: STEALTH ADBLOCK & STREAMING DEFUSER -->
+      <section id="panel-adshield" class="app-panel">
+        <div class="inset-card info-hero-card">
+          <div class="info-hero-top">
+            <svg class="info-hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+            <div class="info-hero-header">
+              <h3>Stealth AdBlock & Defuser</h3>
+              <span>Undetectable by Netmirror & streaming script checks</span>
+            </div>
+          </div>
+          <p class="info-hero-body">
+            Stubs anti-adblock detection routines (<code>window.canRunAds</code>, FuckAdBlock) before page scripts execute, and neutralizes transparent click-jack video overlays.
+          </p>
+        </div>
+
+        <!-- Telemetry Numbers -->
+        <div class="stats-matrix">
+          <div class="stat-cell">
+            <span class="stat-value" id="statAdTraps">0</span>
+            <span class="stat-tag">Traps Bypassed</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-value" id="statAdPopups">0</span>
+            <span class="stat-tag">Pop-unders Blocked</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-value" id="statAdsBlocked">0</span>
+            <span class="stat-tag">Overlays Stripped</span>
+          </div>
+        </div>
+
+        <!-- Clean Feature Inset List -->
+        <div class="inset-card list-card">
+          <div class="list-item">
+            <svg class="item-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <div class="item-content">
+              <b>Main-World Scriptlet Injection</b>
+              <span>Neutralizes FuckAdBlock, BlockAdBlock & bait metrics.</span>
+            </div>
+          </div>
+          <div class="list-item">
+            <svg class="item-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <div class="item-content">
+              <b>Video Overlay Defuser</b>
+              <span>Strips transparent click layers placed over media players.</span>
+            </div>
+          </div>
+          <div class="list-item">
+            <svg class="item-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <div class="item-content">
+              <b>Pop-under Interceptor</b>
+              <span>Prevents deceptive background window pop-unders on click.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: SECURITY NUTRITION MATRIX -->
+      <section id="panel-matrix" class="app-panel">
+        <div class="inset-card info-hero-card">
+          <div class="info-hero-top">
+            <svg class="info-hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <div class="info-hero-header">
+              <h3>Security Nutrition Matrix</h3>
+              <span>4-Pillar real-time heuristic inspection</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="matrix-stack">
+          <!-- Pillar 1: URL & Domain -->
+          <div class="inset-card pillar-card">
+            <div class="pillar-row">
+              <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="2" y1="12" x2="22" y2="12"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+              </svg>
+              <div class="pillar-head">
+                <span class="pillar-title">URL & Domain Integrity</span>
+                <span class="pillar-status" id="matUrlStatus">Checking</span>
+              </div>
+            </div>
+            <p class="pillar-desc" id="matUrlDesc">Checking lexical entropy, homoglyphs, and TLD reputation.</p>
+          </div>
+
+          <!-- Pillar 2: Brand Authenticity -->
+          <div class="inset-card pillar-card">
+            <div class="pillar-row">
+              <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <div class="pillar-head">
+                <span class="pillar-title">Brand Authenticity</span>
+                <span class="pillar-status" id="matBrandStatus">Checking</span>
+              </div>
+            </div>
+            <p class="pillar-desc" id="matBrandDesc">Verifying official brand registration & identity signatures.</p>
+          </div>
+
+          <!-- Pillar 3: Credential Safety -->
+          <div class="inset-card pillar-card">
+            <div class="pillar-row">
+              <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <div class="pillar-head">
+                <span class="pillar-title">Credential & Form Safety</span>
+                <span class="pillar-status" id="matFormStatus">Checking</span>
+              </div>
+            </div>
+            <p class="pillar-desc" id="matFormDesc">Auditing password input security and external POST actions.</p>
+          </div>
+
+          <!-- Pillar 4: DOM Heuristics -->
+          <div class="inset-card pillar-card">
+            <div class="pillar-row">
+              <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+              <div class="pillar-head">
+                <span class="pillar-title">DOM & Behavioral Heuristics</span>
+                <span class="pillar-status" id="matDomStatus">Checking</span>
+              </div>
+            </div>
+            <p class="pillar-desc" id="matDomDesc">Inspecting hidden iframes, sensitive input probes, and scripts.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: DIRECT URL INSPECTOR -->
+      <section id="panel-inspector" class="app-panel">
+        <div class="inset-card info-hero-card">
+          <div class="info-hero-top">
+            <svg class="info-hero-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <div class="info-hero-header">
+              <h3>Direct URL Inspector</h3>
+              <span>Inspect links safely before navigating to them</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="inspector-field-wrap">
+          <input id="quickUrl" type="url" placeholder="https://example.com/login" autocomplete="off" spellcheck="false">
+          <button id="quickGo" class="inspect-submit-btn">Inspect</button>
+        </div>
+        <div id="quickResult" class="inspector-output-slot"></div>
+      </section>
+
+    </main>
+
+    <!-- Apple VisionOS Floating Tab Capsule Dock (Bottom Nav) -->
+    <nav class="apple-capsule-dock" role="tablist">
+      <button class="dock-segment active" data-panel="panel-defense" role="tab" aria-selected="true">
+        <svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span class="dock-label">Status</span>
+      </button>
+      <button class="dock-segment" data-panel="panel-adshield" role="tab" aria-selected="false">
+        <svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+        </svg>
+        <span class="dock-label">AdShield</span>
+      </button>
+      <button class="dock-segment" data-panel="panel-matrix" role="tab" aria-selected="false">
+        <svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span class="dock-label">Matrix</span>
+      </button>
+      <button class="dock-segment" data-panel="panel-inspector" role="tab" aria-selected="false">
+        <svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="dock-label">Inspect</span>
+      </button>
+    </nav>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

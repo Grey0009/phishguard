@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Deceptive site blocked – PhishGuard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(145deg, #1a0505 0%, #450a0a 30%, #2d0808 70%, #0a0505 100%);
+  color: #fee2e2;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px; line-height: 1.6;
+  overflow: hidden;
+}
+
+/* animated radial glow */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at 30% 40%, rgba(220,38,38,.08) 0%, transparent 60%),
+              radial-gradient(circle at 70% 60%, rgba(153,27,27,.06) 0%, transparent 50%);
+  animation: bgPulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes bgPulse {
+  0%, 100% { opacity: .5; }
+  50%      { opacity: 1; }
+}
+
+main {
+  max-width: 580px; width: 90%; padding: 40px;
+  background: rgba(69, 10, 10, 0.35);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(220, 38, 38, 0.12);
+  border-radius: 24px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.5),
+              0 0 0 1px rgba(220,38,38,.08) inset;
+  animation: cardIn .6s ease-out;
+  position: relative; z-index: 1;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(24px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* pulsing icon */
+.warning-icon {
+  font-size: 52px; display: block; text-align: center;
+  margin-bottom: 16px;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 8px  rgba(220,38,38,.3)); }
+  50%      { transform: scale(1.08); filter: drop-shadow(0 0 20px rgba(220,38,38,.6)); }
+}
+
+h1 {
+  text-align: center; font-size: 24px; font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.subtitle {
+  text-align: center; color: #fca5a5; font-size: 14px; margin-bottom: 20px;
+}
+.url-box {
+  word-break: break-all;
+  background: rgba(127, 29, 29, 0.3);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  padding: 12px 16px; border-radius: 12px;
+  font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+  font-size: 13px; color: #fecaca; margin-bottom: 20px;
+}
+.risk-label {
+  font-weight: 700; font-size: 13px; text-transform: uppercase;
+  letter-spacing: .05em; color: #fca5a5; margin-bottom: 8px;
+}
+ul { padding-left: 20px; margin-bottom: 24px; }
+li { margin: 6px 0; font-size: 14px; color: #fee2e2; }
+li::marker { color: #ef4444; }
+
+.btns { display: flex; gap: 12px; flex-wrap: wrap; }
+button {
+  flex: 1; padding: 13px 20px; border-radius: 12px; border: none;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 700; font-size: 14px; cursor: pointer;
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+#back {
+  background: linear-gradient(135deg, #fecaca, #fca5a5);
+  color: #450a0a;
+}
+#back:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(254,202,202,.2);
+}
+#go {
+  background: transparent; color: #fca5a5;
+  border: 1px solid rgba(185, 28, 28, 0.4);
+}
+#go:hover:not(:disabled) {
+  background: rgba(185, 28, 28, 0.15);
+  border-color: rgba(185, 28, 28, 0.6);
+}
+#go:disabled { opacity: .4; cursor: not-allowed; }
+
+.footer-note {
+  text-align: center; color: rgba(252,165,165,.45);
+  font-size: 12px; margin-top: 16px;
+}
+</style>
+</head>
+<body>
+<main>
+  <div class="warning-icon">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  </div>
+  <h1>Deceptive Site Blocked</h1>
+  <p class="subtitle">PhishGuard detected this page is attempting to steal your credentials<span id="brand"></span>.</p>
+  <div class="url-box" id="url"></div>
+  <p class="risk-label">Risk: <span id="risk">–</span></p>
+  <ul id="reasons"></ul>
+  <div class="btns">
+    <button id="back">← Take me to safety</button>
+    <button id="go" disabled>Continue anyway (<span id="countdown">5</span>s)</button>
+  </div>
+  <p class="footer-note">Wrongly blocked? Wait for the countdown, choose "continue anyway", then report it as safe via the extension popup.</p>
+</main>
+<script src="warning.js"></script>
+</body>
+</html>

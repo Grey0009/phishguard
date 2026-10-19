@@ -1,0 +1,1343 @@
+/* ─── Apple Liquid Glass Translucent Design System ───────────────── */
+
+:root {
+  --apple-border: rgba(255, 255, 255, 0.14);
+  --apple-border-strong: rgba(255, 255, 255, 0.24);
+  --apple-specular: rgba(255, 255, 255, 0.28);
+  --apple-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.6);
+
+  --apple-blue: #0a84ff;
+  --apple-blue-glow: rgba(10, 132, 255, 0.4);
+  --apple-green: #30d158;
+  --apple-green-glow: rgba(48, 209, 88, 0.4);
+  --apple-orange: #ff9f0a;
+  --apple-red: #ff453a;
+  --apple-gray: #8e8e93;
+
+  --label-primary: #ffffff;
+  --label-secondary: rgba(235, 235, 245, 0.72);
+  --label-tertiary: rgba(235, 235, 245, 0.42);
+
+  --radius-dock: 9999px;
+  --radius-card: 18px;
+  --radius-sm: 10px;
+  --spring: 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Dynamic Tab-sampled ambient colors (defaults to vibrant blue & purple) */
+  --ambient-primary: rgba(10, 132, 255, 0.45);
+  --ambient-secondary: rgba(139, 92, 246, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Enforce strict hidden behavior across all components */
+[hidden],
+#pausedBanner[hidden],
+#pausedBanner.is-hidden,
+.paused-card[hidden],
+.paused-card.is-hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+html {
+  width: 380px;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  background: #090c14 !important;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+body {
+  width: 380px;
+  height: auto;
+  min-height: 0;
+  max-height: 600px;
+  background: #090c14 !important;
+  color: var(--label-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border-radius: 20px;
+}
+
+/* ─── Apple Liquid Glass Tab Backdrop (Real Tab Color & Blur) ─── */
+.apple-glass-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+/* The real captured screenshot of the active tab behind the popup (dual-buffered) */
+.tab-capture-layer {
+  position: absolute;
+  /* Deep vertical bleed allows smooth real-time parallax scrolling without edge gaps */
+  inset: -240px -40px;
+  background-size: cover;
+  background-position: top right;
+  background-repeat: no-repeat;
+  transform: translate3d(0, var(--scroll-shift, 0px), 0) scale(1.06);
+  opacity: 0;
+  transition: opacity 0.35s ease-out;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.tab-capture-layer.is-active,
+.tab-capture-layer.loaded {
+  opacity: 0.90;
+}
+
+.tab-capture-layer.is-idle {
+  opacity: 0;
+}
+
+.ambient-mesh {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.52;
+  will-change: transform;
+  transition: background 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.35s ease;
+}
+
+.glow-top {
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, var(--ambient-primary) 0%, transparent 70%);
+  top: -40px;
+  right: -30px;
+  animation: floatTop 12s infinite alternate ease-in-out;
+}
+
+.glow-bottom {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, var(--ambient-secondary) 0%, transparent 70%);
+  bottom: 10px;
+  left: -40px;
+  animation: floatBottom 14s infinite alternate ease-in-out;
+}
+
+.glow-center {
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, var(--ambient-primary) 0%, transparent 75%);
+  top: 35%;
+  left: 20%;
+  opacity: 0.32;
+}
+
+.glass-frost-overlay {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(36px) saturate(210%) brightness(0.96);
+  -webkit-backdrop-filter: blur(36px) saturate(210%) brightness(0.96);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(0, 0, 0, 0.28) 100%);
+  pointer-events: none;
+}
+
+@keyframes floatTop {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-20px, 30px) scale(1.1); }
+}
+
+@keyframes floatBottom {
+  0%   { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(25px, -20px) scale(1.08); }
+}
+
+/* ─── Translucent Liquid Glass Shell ──────────────────────────── */
+.popup-shell {
+  position: relative;
+  z-index: 1;
+  padding: 16px 16px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  /* True semi-translucent frosted glass that absorbs underlying tab colors */
+  background: rgba(14, 18, 30, 0.40);
+  backdrop-filter: blur(40px) saturate(210%) brightness(105%);
+  -webkit-backdrop-filter: blur(40px) saturate(210%) brightness(105%);
+  border-radius: 20px;
+  border: 0.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.40),
+              inset 0 0 24px 0 rgba(255, 255, 255, 0.05);
+}
+
+.popup-shell.liquid-off {
+  background: rgba(13, 17, 28, 0.94);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* ─── Apple Navigation Bar ────────────────────────────────────── */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 12px 2px;
+}
+
+.brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--apple-blue);
+  filter: drop-shadow(0 0 6px var(--apple-blue-glow));
+}
+
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--label-primary);
+}
+
+.brand-sub {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--apple-green);
+  letter-spacing: 0.02em;
+}
+
+.brand-sub.paused {
+  color: var(--apple-gray);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ─── Apple iOS System Toggle Switch ──────────────────────────── */
+.apple-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.apple-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.apple-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(120, 120, 128, 0.38);
+  border-radius: var(--radius-dock);
+  transition: background-color var(--spring);
+}
+
+.apple-toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.16);
+  transition: transform var(--spring);
+}
+
+.apple-toggle input:checked + .apple-toggle-slider {
+  background-color: #34c759;
+}
+
+.apple-toggle input:checked + .apple-toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.icon-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--label-secondary);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--spring);
+}
+
+.icon-action-btn svg {
+  width: 17px;
+  height: 17px;
+}
+
+.icon-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--label-primary);
+}
+
+/* ─── View Content & Panels ───────────────────────────────────── */
+.view-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-panel {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  animation: panelFade 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.app-panel.active {
+  display: flex;
+}
+
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Translucent Inset Glass Cards ───────────────────────────── */
+.inset-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(35px) saturate(190%);
+  -webkit-backdrop-filter: blur(35px) saturate(190%);
+  border: 0.5px solid var(--apple-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 var(--apple-specular);
+  transition: border-color var(--spring);
+}
+
+.inset-card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+/* ─── Paused State Banner (Fixed hidden display) ──────────────── */
+.paused-card {
+  background: rgba(36, 40, 52, 0.72);
+  backdrop-filter: blur(35px) saturate(180%);
+  -webkit-backdrop-filter: blur(35px) saturate(180%);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+  animation: panelFade 0.2s ease;
+}
+
+.paused-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--apple-gray);
+  flex-shrink: 0;
+}
+
+.paused-icon-wrap svg {
+  width: 18px;
+  height: 18px;
+}
+
+.paused-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.paused-text b {
+  font-size: 13px;
+  color: var(--label-primary);
+}
+
+.paused-text span {
+  font-size: 11px;
+  color: var(--label-secondary);
+}
+
+.resume-btn {
+  background: var(--apple-blue);
+  color: #fff;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-dock);
+  cursor: pointer;
+  transition: opacity var(--spring);
+}
+
+.resume-btn:hover {
+  opacity: 0.9;
+}
+
+/* ─── Hero Precision Slender Gauge ────────────────────────────── */
+.hero-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0 6px 0;
+  transition: opacity var(--spring);
+}
+
+.hero-stage.dimmed {
+  opacity: 0.4;
+  filter: grayscale(0.5);
+}
+
+.gauge-assembly {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-render {
+  width: 120px;
+  height: 120px;
+  transform: rotate(-90deg);
+}
+
+.gauge-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 4.5;
+}
+
+.gauge-sheen {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  filter: blur(5px);
+  opacity: 0.55;
+  transition: stroke-dashoffset 0.8s var(--spring), stroke 0.4s ease;
+}
+
+.gauge-stroke {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s var(--spring), stroke 0.4s ease;
+}
+
+.gauge-readout {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-number {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.gauge-metric {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label-secondary);
+}
+
+.gauge-caption {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--label-tertiary);
+  margin-top: 2px;
+}
+
+.badge-holder {
+  margin-top: 10px;
+}
+
+/* ─── Apple Verdict Capsule ───────────────────────────────────── */
+.verdict-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-dock);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: all var(--spring);
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.verdict-capsule.safe {
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--apple-green);
+  border: 0.5px solid rgba(48, 209, 88, 0.38);
+  box-shadow: 0 0 14px var(--apple-green-glow);
+}
+
+.verdict-capsule.suspicious {
+  background: rgba(255, 159, 10, 0.16);
+  color: var(--apple-orange);
+  border: 0.5px solid rgba(255, 159, 10, 0.38);
+}
+
+.verdict-capsule.phishing {
+  background: rgba(255, 69, 58, 0.16);
+  color: var(--apple-red);
+  border: 0.5px solid rgba(255, 69, 58, 0.38);
+}
+
+.verdict-capsule.pending,
+.verdict-capsule.paused {
+  background: rgba(142, 142, 147, 0.15);
+  color: var(--apple-gray);
+  border: 0.5px solid rgba(142, 142, 147, 0.25);
+}
+
+/* ─── Domain Status Card ──────────────────────────────────────── */
+.domain-status-card {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.domain-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  padding-right: 8px;
+}
+
+.domain-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--label-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.domain-meta {
+  font-size: 11px;
+  color: var(--label-secondary);
+}
+
+.domain-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trust-action-btn {
+  background: transparent;
+  color: var(--label-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-dock);
+  transition: all var(--spring);
+}
+
+.trust-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.trust-action-btn.is-trusted {
+  background: rgba(52, 199, 89, 0.2);
+  border-color: rgba(52, 199, 89, 0.4);
+  color: #34c759;
+}
+
+.export-action-btn {
+  background: transparent;
+  color: var(--label-secondary);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius-dock);
+  transition: all var(--spring);
+}
+
+.export-action-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.export-action-btn:active {
+  transform: scale(0.96);
+}
+
+.rescan-action-btn {
+  background: transparent;
+  color: var(--apple-blue);
+  border: none;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-dock);
+  transition: all var(--spring);
+}
+
+.rescan-action-btn:hover {
+  background: rgba(10, 132, 255, 0.14);
+}
+
+/* ─── Analysis Pipeline Engine Showcase Card ─────────────────── */
+.pipeline-card {
+  padding: 11px 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  background: rgba(18, 24, 38, 0.50);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  transition: all var(--spring);
+}
+
+.pipeline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pipeline-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pipeline-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--label-secondary);
+  text-transform: uppercase;
+}
+
+.pipeline-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--apple-blue);
+}
+
+.pipeline-switch-pills {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px;
+  border-radius: var(--radius-dock);
+  border: 0.5px solid rgba(255, 255, 255, 0.08);
+}
+
+.pipe-pill {
+  background: transparent;
+  border: none;
+  color: var(--label-secondary);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: var(--radius-dock);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pipe-pill:hover {
+  color: var(--label-primary);
+}
+
+.pipe-pill.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 0.5px 0.5px rgba(255, 255, 255, 0.4);
+}
+
+.pipeline-visual-slot {
+  width: 100%;
+  border-radius: 9px;
+  background: rgba(8, 12, 20, 0.60);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  padding: 8px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* ── Lexical Graph Showcase ── */
+.lex-graph-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.lex-svg-canvas {
+  width: 100%;
+  height: 60px;
+  display: block;
+}
+
+.lex-meta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--label-secondary);
+  padding-top: 4px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.lex-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lex-meta-tag b {
+  color: var(--label-primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+}
+
+/* ── DOM Topology Showcase ── */
+.dom-topology-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.dom-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.dom-cell {
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 5px 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dom-cell-label {
+  font-size: 9px;
+  color: var(--label-secondary);
+  font-weight: 500;
+}
+
+.dom-cell-val {
+  font-size: 10.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dom-cell-val.safe { color: var(--apple-green); }
+.dom-cell-val.warn { color: var(--apple-orange); }
+.dom-cell-val.alert { color: var(--apple-red); }
+
+.dom-tree-schematic {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--label-secondary);
+}
+
+.dom-tree-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: #ffffff;
+}
+
+.dom-tree-arrow {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Deep ML Ensemble Showcase ── */
+.ml-ensemble-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ml-engine-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  gap: 8px;
+}
+
+.ml-track-name {
+  color: var(--label-secondary);
+  font-weight: 500;
+  min-width: 100px;
+  font-size: 9.5px;
+}
+
+.ml-track-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.ml-track-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--apple-blue), #5ac8fa);
+  transition: width 0.4s ease;
+}
+
+.ml-track-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--label-primary);
+  width: 30px;
+  text-align: right;
+}
+
+.ml-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 3px;
+  padding-top: 3px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+  font-size: 9.5px;
+  color: var(--label-secondary);
+}
+
+/* ─── Control Section Group ───────────────────────────────────── */
+.section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.group-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label-tertiary);
+  letter-spacing: 0.05em;
+  padding-left: 4px;
+}
+
+.control-row-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 14px 8px;
+}
+
+.glass-circle-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--spring);
+}
+
+.icon-disc {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid var(--apple-border);
+  box-shadow: inset 0 1px 0 var(--apple-specular);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--label-secondary);
+  transition: all var(--spring);
+}
+
+.icon-disc svg {
+  width: 20px;
+  height: 20px;
+}
+
+.disc-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--label-secondary);
+  transition: color var(--spring);
+}
+
+.glass-circle-btn.active .icon-disc {
+  background: rgba(10, 132, 255, 0.22);
+  border-color: rgba(10, 132, 255, 0.6);
+  box-shadow: 0 0 16px var(--apple-blue-glow), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+}
+
+.glass-circle-btn.active .disc-label {
+  color: var(--label-primary);
+  font-weight: 600;
+}
+
+/* ─── Signals Card ────────────────────────────────────────────── */
+.signals-card {
+  padding: 12px 14px;
+}
+
+.card-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--label-tertiary);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.signals-collection {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.signals-collection li {
+  font-size: 11.5px;
+  color: var(--label-secondary);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  line-height: 1.35;
+}
+
+/* ─── Info Hero Card (AdShield & Matrix tabs) ─────────────────── */
+.info-hero-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.info-hero-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-hero-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--apple-blue);
+  flex-shrink: 0;
+}
+
+.info-hero-header h3 {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.info-hero-header span {
+  font-size: 11px;
+  color: var(--label-secondary);
+}
+
+.info-hero-body {
+  font-size: 11.5px;
+  color: var(--label-secondary);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.info-hero-body code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--apple-blue);
+  background: rgba(10, 132, 255, 0.14);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* ─── Stats Matrix ────────────────────────────────────────────── */
+.stats-matrix {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat-cell {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(35px);
+  border: 0.5px solid var(--apple-border);
+  border-radius: var(--radius-sm);
+  padding: 12px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  box-shadow: inset 0 1px 0 var(--apple-specular);
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--apple-blue);
+}
+
+.stat-tag {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--label-secondary);
+  line-height: 1.25;
+}
+
+/* ─── List Inset Card ─────────────────────────────────────────── */
+.list-card {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.item-check-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--apple-green);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.item-content b {
+  font-size: 12px;
+  color: var(--label-primary);
+  font-weight: 600;
+}
+
+.item-content span {
+  font-size: 11px;
+  color: var(--label-secondary);
+}
+
+/* ─── Matrix Stack ────────────────────────────────────────────── */
+.matrix-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pillar-card {
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pillar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pillar-icon {
+  width: 15px;
+  height: 15px;
+  color: var(--label-secondary);
+  flex-shrink: 0;
+}
+
+.pillar-head {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pillar-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--label-primary);
+}
+
+.pillar-status {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.pillar-status.pass {
+  background: rgba(48, 209, 88, 0.16);
+  color: var(--apple-green);
+  border: 0.5px solid rgba(48, 209, 88, 0.38);
+}
+
+.pillar-status.warn {
+  background: rgba(255, 159, 10, 0.16);
+  color: var(--apple-orange);
+  border: 0.5px solid rgba(255, 159, 10, 0.38);
+}
+
+.pillar-status.fail {
+  background: rgba(255, 69, 58, 0.16);
+  color: var(--apple-red);
+  border: 0.5px solid rgba(255, 69, 58, 0.38);
+}
+
+.pillar-status.neutral {
+  background: rgba(142, 142, 147, 0.14);
+  color: var(--apple-gray);
+}
+
+.pillar-desc {
+  font-size: 11px;
+  color: var(--label-secondary);
+  padding-left: 23px;
+  line-height: 1.35;
+}
+
+/* ─── Inspector Inputs ────────────────────────────────────────── */
+.inspector-field-wrap {
+  display: flex;
+  gap: 8px;
+}
+
+input[type="url"] {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid var(--apple-border);
+  color: var(--label-primary);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all var(--spring);
+}
+
+input[type="url"]:focus {
+  border-color: var(--apple-blue);
+  box-shadow: 0 0 12px var(--apple-blue-glow);
+}
+
+.inspect-submit-btn {
+  background: var(--apple-blue);
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity var(--spring);
+}
+
+.inspect-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.inspector-output-slot {
+  margin-top: 4px;
+}
+
+/* ─── Apple VisionOS Floating Tab Capsule Dock ────────────────── */
+.apple-capsule-dock {
+  position: relative;
+  margin-top: 14px;
+  width: 100%;
+  height: 54px;
+  background: rgba(20, 24, 38, 0.65);
+  backdrop-filter: blur(45px) saturate(220%);
+  -webkit-backdrop-filter: blur(45px) saturate(220%);
+  border: 0.5px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-dock);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 4px;
+  gap: 3px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(255, 255, 255, 0.35);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.dock-segment {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-dock);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  color: var(--label-secondary);
+  transition: all var(--spring);
+  position: relative;
+  user-select: none;
+}
+
+.dock-svg {
+  width: 17px;
+  height: 17px;
+  transition: transform var(--spring);
+}
+
+.dock-label {
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.dock-segment:hover {
+  color: var(--label-primary);
+}
+
+.dock-segment.active {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dock-segment.active .dock-svg {
+  transform: scale(1.1);
+  color: #ffffff;
+}
+
+.dock-segment.active .dock-label {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* ─── Error Strip & Messages ──────────────────────────────────── */
+.error-strip {
+  background: rgba(255, 69, 58, 0.15);
+  border: 0.5px solid rgba(255, 69, 58, 0.35);
+  color: #ff8b85;
+  font-size: 11px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.inline-msg {
+  font-size: 11px;
+  color: var(--apple-blue);
+  text-align: center;
+  min-height: 16px;
+}
+
+/* Apple Custom Minimal Scrollbar (Zero width to prevent right-edge gutter) */
+::-webkit-scrollbar {
+  width: 0px !important;
+  height: 0px !important;
+  display: none !important;
+}
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}

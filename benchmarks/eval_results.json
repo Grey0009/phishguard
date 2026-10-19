@@ -1,0 +1,36 @@
+{
+  "timestamp": "2026-10-19T17:51:47.820094Z",
+  "sample_size": 500,
+  "metrics": {
+    "accuracy": 0.98,
+    "precision": 0.9615,
+    "recall": 1.0,
+    "specificity": 0.96,
+    "false_positive_rate": 0.04,
+    "f1_score": 0.9804,
+    "tp": 250,
+    "fp": 10,
+    "tn": 240,
+    "fn": 0
+  },
+  "latency_ms": {
+    "stage1_lexical": {
+      "mean": 0.527,
+      "p50": 0.431,
+      "p95": 1.525,
+      "p99": 2.167
+    },
+    "stage2_dom": {
+      "mean": 0.13,
+      "p50": 0.106,
+      "p95": 0.282,
+      "p99": 0.345
+    },
+    "stage3_visual": {
+      "mean": 1.747,
+      "p50": 1.687,
+      "p95": 2.039,
+      "p99": 2.349
+    }
+  }
+}
