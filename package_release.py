@@ -52,6 +52,7 @@ def build_full_zip():
         "docs",
         "start.sh",
         "start.bat",
+        "run_windows.ps1",
         "Dockerfile",
         "docker-compose.yml",
         "README.md",
