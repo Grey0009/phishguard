@@ -114,26 +114,34 @@ exit /b 1
 echo [*] Python verified successfully.
 
 rem ------------------------------------------------------------------------------
-rem 2. VIRTUAL ENVIRONMENT & DEPENDENCY INSTALLATION
+rem 2. ENVIRONMENT & DEPENDENCY INSTALLATION
 rem ------------------------------------------------------------------------------
+rem Try isolated venv first; if unavailable, seamlessly fall back to global Python
 if not exist "%VENV_DIR%\Scripts\python.exe" (
-    echo [*] Setting up isolated Python environment in backend\.venv...
-    %PYTHON_CMD% -m venv "%VENV_DIR%"
+    echo [*] Setting up application environment in backend\.venv...
+    %PYTHON_CMD% -m venv "%VENV_DIR%" >nul 2>&1
 )
 
-set "VENV_PY=%VENV_DIR%\Scripts\python.exe"
-set "VENV_PIP=%VENV_DIR%\Scripts\pip.exe"
-set "DEPS_FLAG=%VENV_DIR%\.deps_ready"
+if exist "%VENV_DIR%\Scripts\python.exe" (
+    set "RUN_PY=%VENV_DIR%\Scripts\python.exe"
+    set "RUN_PIP=%VENV_DIR%\Scripts\pip.exe"
+    set "DEPS_FLAG=%VENV_DIR%\.deps_ready"
+) else (
+    echo [!] Using global Python environment directly.
+    set "RUN_PY=%PYTHON_CMD%"
+    set "RUN_PIP=%PYTHON_CMD% -m pip"
+    set "DEPS_FLAG=%BACKEND_DIR%\.deps_ready"
+)
 
-if not exist "%DEPS_FLAG%" (
+if not exist "!DEPS_FLAG!" (
     echo [*] Installing required security engine dependencies (Waitress, Flask, NumPy, Pillow)...
-    "%VENV_PIP%" install --upgrade pip --quiet >nul 2>&1
-    "%VENV_PIP%" install -r "%BACKEND_DIR%\requirements.txt" --quiet
+    !RUN_PIP! install --upgrade pip --quiet >nul 2>&1
+    !RUN_PIP! install -r "%BACKEND_DIR%\requirements.txt" --quiet
     if !errorlevel! neq 0 (
         echo [!] Retrying pip installation with verbose logging...
-        "%VENV_PIP%" install -r "%BACKEND_DIR%\requirements.txt"
+        !RUN_PIP! install -r "%BACKEND_DIR%\requirements.txt"
     )
-    echo ready > "%DEPS_FLAG%"
+    echo ready > "!DEPS_FLAG!"
     echo [✓] Dependencies installed and verified.
 ) else (
     echo [✓] Dependencies already verified.
@@ -210,7 +218,7 @@ echo   To shut down, press Ctrl+C anytime.
 echo ===================================================================
 echo.
 
-"%VENV_PY%" "%BACKEND_DIR%\run.py" --host 127.0.0.1 --port 8000
+!RUN_PY! "%BACKEND_DIR%\run.py" --host 127.0.0.1 --port 8000
 
 echo.
 echo [!] PhishGuard server has stopped.
