@@ -24,10 +24,23 @@
   function absHref(u) {
     try { return new URL(u, location.href).href; } catch (_) { return ""; }
   }
+
+  const COMMON_CDNS = new Set([
+    "cloudflare.com", "cloudfront.net", "akamaihd.net", "akamaized.net", "fastly.net",
+    "jsdelivr.net", "googleapis.com", "gstatic.com", "googleusercontent.com",
+    "unpkg.com", "azureedge.net", "fbcdn.net", "twimg.com", "ytimg.com", "wp.com"
+  ]);
+
   function isExternal(u) {
     try {
       const x = new URL(u, location.href);
-      return /^https?:$/.test(x.protocol) && regDomain(x.hostname) !== here;
+      if (!/^https?:$/.test(x.protocol)) return false;
+      const reg = regDomain(x.hostname);
+      if (reg === here) return false;
+      const hereSld = here.split(".")[0];
+      if (hereSld && hereSld.length >= 4 && reg.includes(hereSld)) return false;
+      if (COMMON_CDNS.has(reg)) return false;
+      return true;
     } catch (_) { return false; }
   }
 
@@ -460,30 +473,67 @@
 
   const HIGH_PROFILE_BRANDS = ["apple", "google", "microsoft", "paypal", "netflix", "amazon", "facebook", "instagram", "chase", "bankofamerica", "binance", "coinbase"];
 
-  function analyzeLink(urlStr) {
+  function analyzeLink(urlStr, aEl) {
     try {
       const u = new URL(urlStr);
       const host = u.hostname.toLowerCase();
       const isShortener = REDIRECT_HOSTS.has(host) || host.endsWith(".bit.ly");
       const isExt = isExternal(urlStr);
 
-      let isSuspicious = false;
-      let reason = "";
-
-      if (host.includes("xn--")) {
-        isSuspicious = true;
-        reason = "Punycode / Homoglyph";
-      } else if (/^[\d.]+$/.test(host)) {
-        isSuspicious = true;
-        reason = "Raw IP Host";
-      } else {
-        for (const b of HIGH_PROFILE_BRANDS) {
-          if (host.includes(b) && !host.endsWith("." + b + ".com") && host !== b + ".com") {
-            isSuspicious = true;
-            reason = "Brand Spoof Risk";
-            break;
+      // 1. Deceptive Anchor Text Mismatch Detection
+      let isMismatch = false;
+      let mismatchClaim = "";
+      if (aEl) {
+        const txt = (aEl.innerText || aEl.textContent || "").trim().toLowerCase();
+        const m = txt.match(/([a-z0-9-]+\.(?:com|org|net|co|in|edu|gov|io|ai|app|xyz|me))/i);
+        if (m) {
+          const claimed = m[1].toLowerCase();
+          if (regDomain(claimed) !== regDomain(host)) {
+            isMismatch = true;
+            mismatchClaim = claimed;
           }
         }
+      }
+
+      // 2. Client Security Engine Evaluation
+      let verdict = "safe";
+      let risk = 0.0;
+      let reason = "";
+      let matchedBrand = null;
+
+      if (typeof PhishGuardDetector !== "undefined") {
+        const det = PhishGuardDetector.analyzeUrl(urlStr);
+        verdict = det.verdict;
+        risk = det.risk;
+        matchedBrand = det.brand;
+        if (det.reasons && det.reasons.length > 0) {
+          reason = det.reasons[0].message;
+        }
+      } else {
+        if (host.includes("xn--")) {
+          verdict = "phishing";
+          risk = 0.85;
+          reason = "Punycode / Homoglyph attack";
+        } else if (/^[\d.]+$/.test(host)) {
+          verdict = "phishing";
+          risk = 0.80;
+          reason = "Direct IP host target";
+        } else {
+          for (const b of HIGH_PROFILE_BRANDS) {
+            if (host.includes(b) && !host.endsWith("." + b + ".com") && host !== b + ".com") {
+              verdict = "phishing";
+              risk = 0.75;
+              reason = "Brand Spoof Risk";
+              break;
+            }
+          }
+        }
+      }
+
+      if (isMismatch) {
+        verdict = "phishing";
+        risk = Math.max(risk, 0.92);
+        reason = `Deceptive Anchor: text claims "${mismatchClaim}", links to "${host}"!`;
       }
 
       return {
@@ -491,8 +541,12 @@
         path: u.pathname.length > 25 ? u.pathname.slice(0, 25) + "…" : u.pathname,
         isShortener,
         isExt,
-        isSuspicious,
-        reason
+        verdict,
+        risk,
+        reason,
+        matchedBrand,
+        isMismatch,
+        mismatchClaim
       };
     } catch (_) {
       return null;
@@ -510,38 +564,59 @@
     const fullUrl = absHref(rawHref);
     if (!/^https?:/.test(fullUrl)) return;
 
-    const analysis = analyzeLink(fullUrl);
+    const analysis = analyzeLink(fullUrl, a);
     if (!analysis) return;
 
-    // Only show for external links, shorteners, or suspicious targets
-    if (!analysis.isExt && !analysis.isShortener && !analysis.isSuspicious) return;
+    // Show HUD for external links, redirects, or flagged suspicious/phishing destinations
+    if (!analysis.isExt && !analysis.isShortener && analysis.verdict === "safe" && !analysis.isMismatch) return;
 
     if (hoverHudTimeout) clearTimeout(hoverHudTimeout);
     hoverHudTimeout = setTimeout(() => {
       const hud = getHoverHud();
       let badgeHtml = '<span style="background:rgba(10,132,255,0.22);color:#38bdf8;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">EXTERNAL</span>';
       let borderGlow = "rgba(255, 255, 255, 0.22)";
+      let strokeColor = "#38bdf8";
 
-      if (analysis.isSuspicious) {
-        badgeHtml = `<span style="background:rgba(255,69,58,0.25);color:#ff453a;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">ALERT: ${analysis.reason || "SUSPICIOUS"}</span>`;
-        borderGlow = "rgba(255, 69, 58, 0.5)";
+      if (analysis.isMismatch) {
+        badgeHtml = `<span style="background:rgba(255,69,58,0.28);color:#ff453a;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">🚨 DECEPTIVE LINK</span>`;
+        borderGlow = "rgba(255, 69, 58, 0.65)";
+        strokeColor = "#ff453a";
+      } else if (analysis.verdict === "phishing") {
+        badgeHtml = `<span style="background:rgba(255,69,58,0.25);color:#ff453a;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">🛡️ PHISHING DANGER</span>`;
+        borderGlow = "rgba(255, 69, 58, 0.6)";
+        strokeColor = "#ff453a";
+      } else if (analysis.verdict === "suspicious") {
+        badgeHtml = `<span style="background:rgba(255,159,10,0.25);color:#ff9f0a;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">⚠️ SUSPICIOUS</span>`;
+        borderGlow = "rgba(255, 159, 10, 0.5)";
+        strokeColor = "#ff9f0a";
       } else if (analysis.isShortener) {
         badgeHtml = '<span style="background:rgba(191,90,242,0.25);color:#bf5af2;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">REDIRECT</span>';
         borderGlow = "rgba(191, 90, 242, 0.4)";
+        strokeColor = "#bf5af2";
+      } else if (analysis.matchedBrand) {
+        badgeHtml = `<span style="background:rgba(48,209,88,0.20);color:#30d158;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">✓ ${analysis.matchedBrand.toUpperCase()}</span>`;
+        borderGlow = "rgba(48, 209, 88, 0.35)";
+        strokeColor = "#30d158";
+      } else if (analysis.isExt) {
+        badgeHtml = '<span style="background:rgba(48,209,88,0.18);color:#34d399;padding:2px 7px;border-radius:99px;font-size:10px;font-weight:700">✓ SAFE EXTERNAL</span>';
+        borderGlow = "rgba(48, 209, 88, 0.28)";
+        strokeColor = "#34d399";
       }
 
       hud.style.borderColor = borderGlow;
       hud.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${analysis.isSuspicious ? '#ff453a' : '#38bdf8'}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${strokeColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          ${analysis.verdict === 'phishing' || analysis.isMismatch ? '<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' : '<path d="m9 12 2 2 4-4"/>'}
         </svg>
         <span style="font-weight:700;color:#ffffff">${analysis.host}</span>
         <span style="color:rgba(235,235,245,0.55);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${analysis.path}</span>
         ${badgeHtml}
+        ${analysis.reason ? `<span style="color:${analysis.verdict === 'phishing' || analysis.isMismatch ? '#ff453a' : '#ff9f0a'};font-size:10px;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${analysis.reason}</span>` : ''}
       `;
 
       // Position near cursor, safely within viewport bounds
-      const posX = Math.min(e.clientX + 12, window.innerWidth - 340);
+      const posX = Math.min(e.clientX + 12, window.innerWidth - 380);
       const posY = e.clientY + 24 > window.innerHeight - 50 ? e.clientY - 42 : e.clientY + 20;
       hud.style.left = `${Math.max(10, posX)}px`;
       hud.style.top = `${posY}px`;
@@ -569,6 +644,163 @@
       }
     }
   }, { passive: true });
+
+  /* ─── Proactive Gmail Phishing & Sender Impersonation Shield ───── */
+  if (location.hostname === "mail.google.com") {
+    let gmailHudEl = null;
+    let gmailHudTimeout = null;
+
+    function getGmailHud() {
+      if (!gmailHudEl) {
+        gmailHudEl = document.createElement("div");
+        gmailHudEl.id = "__phishguard_gmail_hud__";
+        gmailHudEl.style.cssText = `
+          position: fixed;
+          z-index: 2147483647;
+          pointer-events: none;
+          display: none;
+          align-items: center;
+          gap: 9px;
+          padding: 7px 14px;
+          background: rgba(15, 20, 32, 0.94);
+          backdrop-filter: blur(28px) saturate(200%);
+          -webkit-backdrop-filter: blur(28px) saturate(200%);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          border-radius: 9999px;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+          color: #ffffff;
+          font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', sans-serif;
+          font-size: 11.5px;
+          line-height: 1.25;
+          letter-spacing: -0.01em;
+          transition: opacity 0.16s ease, transform 0.16s ease;
+          opacity: 0;
+          transform: translateY(4px) scale(0.96);
+        `;
+        document.documentElement.appendChild(gmailHudEl);
+      }
+      return gmailHudEl;
+    }
+
+    function inspectGmailElement(target) {
+      if (!target) return null;
+      const row = target.closest('tr[role="row"], .zA, div[role="row"], .gD, .gE, .adn');
+      if (!row) return null;
+
+      let senderName = "";
+      let senderEmail = "";
+      let subject = "";
+
+      const gD = row.querySelector ? row.querySelector(".gD") : (row.classList.contains("gD") ? row : null);
+      if (gD) {
+        senderEmail = gD.getAttribute("email") || "";
+        senderName = gD.getAttribute("name") || gD.textContent || "";
+      }
+
+      if (!senderEmail) {
+        const emailSpan = row.querySelector ? row.querySelector("span[email]") : null;
+        if (emailSpan) {
+          senderEmail = emailSpan.getAttribute("email") || "";
+          senderName = emailSpan.getAttribute("name") || emailSpan.textContent || "";
+        }
+      }
+
+      if (!senderName) {
+        const nameEl = row.querySelector ? row.querySelector(".yW, .yX, .zF") : null;
+        if (nameEl) senderName = nameEl.textContent || "";
+      }
+
+      const subjEl = row.querySelector ? row.querySelector(".bog, .bqe, h2.hP, .ha") : null;
+      if (subjEl) subject = subjEl.textContent || "";
+
+      if (!senderEmail && senderName.includes("@")) {
+        const m = senderName.match(/<([^>]+)>/) || senderName.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (m) senderEmail = m[1];
+      }
+
+      if (!senderName && !senderEmail) return null;
+      return { senderName: senderName.trim(), senderEmail: senderEmail.trim(), subject: subject.trim() };
+    }
+
+    document.addEventListener("mouseover", (e) => {
+      if (!isHoverHudEnabled) return;
+      if (e.target.closest("a[href]")) return;
+
+      const data = inspectGmailElement(e.target);
+      if (!data || (!data.senderName && !data.senderEmail)) return;
+
+      if (gmailHudTimeout) clearTimeout(gmailHudTimeout);
+      gmailHudTimeout = setTimeout(() => {
+        const hud = getGmailHud();
+        let audit = null;
+        if (typeof PhishGuardDetector !== "undefined" && PhishGuardDetector.analyzeEmail) {
+          audit = PhishGuardDetector.analyzeEmail(data.senderName, data.senderEmail, data.subject);
+        } else {
+          audit = { verdict: "safe", badge: "SAFE", alertTitle: "Legitimate Sender", warningReason: "" };
+        }
+
+        let borderGlow = "rgba(48, 209, 88, 0.4)";
+        let iconColor = "#30d158";
+        let badgeHtml = '<span style="background:rgba(48,209,88,0.2);color:#30d158;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✓ SAFE</span>';
+
+        if (audit.verdict === "phishing") {
+          borderGlow = "rgba(255, 69, 58, 0.65)";
+          iconColor = "#ff453a";
+          badgeHtml = `<span style="background:rgba(255,69,58,0.25);color:#ff453a;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">🚨 ${audit.badge || "PHISHING WARNING"}</span>`;
+        } else if (audit.verdict === "suspicious") {
+          borderGlow = "rgba(255, 159, 10, 0.55)";
+          iconColor = "#ff9f0a";
+          badgeHtml = `<span style="background:rgba(255,159,10,0.25);color:#ff9f0a;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⚠️ ${audit.badge || "SUSPICIOUS"}</span>`;
+        } else if (audit.isOfficial) {
+          borderGlow = "rgba(48, 209, 88, 0.55)";
+          iconColor = "#30d158";
+          badgeHtml = `<span style="background:rgba(48,209,88,0.22);color:#30d158;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✓ ${audit.badge || "OFFICIAL"}</span>`;
+        }
+
+        hud.style.borderColor = borderGlow;
+        hud.innerHTML = `
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="${iconColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            ${audit.verdict === 'phishing' ? '<line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' : '<path d="m9 12 2 2 4-4"/>'}
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:1px;max-width:320px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-weight:700;color:#ffffff">${audit.alertTitle}</span>
+              ${badgeHtml}
+            </div>
+            <span style="color:rgba(235,235,245,0.70);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${audit.warningReason || (data.senderEmail || data.senderName)}</span>
+          </div>
+        `;
+
+        const posX = Math.min(e.clientX + 14, window.innerWidth - 380);
+        const posY = e.clientY + 26 > window.innerHeight - 60 ? e.clientY - 50 : e.clientY + 20;
+        hud.style.left = `${Math.max(12, posX)}px`;
+        hud.style.top = `${posY}px`;
+        hud.style.display = "flex";
+
+        requestAnimationFrame(() => {
+          hud.style.opacity = "1";
+          hud.style.transform = "translateY(0) scale(1)";
+        });
+      }, 130);
+    }, { passive: true });
+
+    document.addEventListener("mouseout", (e) => {
+      const row = e.target.closest('tr[role="row"], .zA, div[role="row"], .gD, .gE, .adn');
+      if (row) {
+        if (gmailHudTimeout) clearTimeout(gmailHudTimeout);
+        if (gmailHudEl) {
+          gmailHudEl.style.opacity = "0";
+          gmailHudEl.style.transform = "translateY(4px) scale(0.96)";
+          setTimeout(() => {
+            if (gmailHudEl && gmailHudEl.style.opacity === "0") {
+              gmailHudEl.style.display = "none";
+            }
+          }, 150);
+        }
+      }
+    }, { passive: true });
+  }
 
   // ─── Real-Time Liquid Glass Ambient Streamer ───────────────────
   chrome.runtime.onConnect.addListener((port) => {

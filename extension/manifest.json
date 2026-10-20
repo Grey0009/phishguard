@@ -23,7 +23,7 @@
     },
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content.js"],
+      "js": ["client_detector.js", "content.js"],
       "run_at": "document_idle",
       "all_frames": false
     }

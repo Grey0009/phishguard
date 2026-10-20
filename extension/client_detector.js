@@ -60,7 +60,11 @@
     { name: "Income Tax India", keywords: ["incometax", "incometaxindia", "incometaxindiaefiling"], domains: ["incometax.gov.in", "incometaxindiaefiling.gov.in"] },
     { name: "UIDAI (Aadhaar)", keywords: ["uidai"], domains: ["uidai.gov.in"] },
     { name: "DigiLocker", keywords: ["digilocker"], domains: ["digilocker.gov.in"] },
-    { name: "SPPU", keywords: ["unipune", "sppu"], domains: ["unipune.ac.in"] }
+    { name: "SPPU", keywords: ["unipune", "sppu"], domains: ["unipune.ac.in"] },
+    { name: "Chase", keywords: ["chase", "jpmorgan"], domains: ["chase.com", "jpmorgan.com"] },
+    { name: "Bank of America", keywords: ["bankofamerica", "bofa"], domains: ["bankofamerica.com", "bofa.com"] },
+    { name: "Wells Fargo", keywords: ["wellsfargo"], domains: ["wellsfargo.com"] },
+    { name: "Citibank", keywords: ["citibank", "citi"], domains: ["citi.com", "citibank.com"] }
   ];
 
   // ─── 2. REPUTATION & TLD HEURISTICS ───────────────────────────────────────
@@ -651,12 +655,22 @@
         mailtoForm = true;
         continue;
       }
-      const fp = parseUrl(act);
+      let fullAct = act;
+      try {
+        fullAct = new URL(act, pageUrl).href;
+      } catch (_) {}
+      const fp = parseUrl(fullAct);
       if (!fp.valid) continue;
       if (fp.registrable && p.registrable && fp.registrable !== p.registrable) {
-        if (f.hasPassword || dom.sensitiveFields > 0) crossForm = true;
+        // Also check if domain has matching second level name (e.g. udemy in auth.udemy.com or udemy-sso.com)
+        const pSld = p.sld || (p.registrable ? p.registrable.split(".")[0] : "");
+        const fpSld = fp.sld || (fp.registrable ? fp.registrable.split(".")[0] : "");
+        const isRelated = pSld && fpSld && (pSld.includes(fpSld) || fpSld.includes(pSld));
+        if (!isRelated && (f.hasPassword || dom.sensitiveFields > 0)) {
+          crossForm = true;
+        }
       }
-      if (fp.scheme === "http" && !fp.is_local && (f.hasPassword || dom.sensitiveFields > 0)) {
+      if (fp.scheme === "http" && !fp.is_local && !p.is_local && (f.hasPassword || dom.sensitiveFields > 0)) {
         httpForm = true;
       }
     }
@@ -695,11 +709,20 @@
     if (emptyForm && hasPw) {
       add("FORM_EMPTY_ACTION", "Password form has no destination action or uses a null handler", 1.0);
     }
+
+    // Context check: If URL is clean HTTPS and there is no brand impersonation or form theft,
+    // normal websites frequently use analytics iframes (e.g. Google Tag Manager) and CDN assets.
+    const isCleanContext = (!crossForm && !httpForm && !mailtoForm && !brandClaim && p.is_https && !p.shared_hosting);
+
     if (ifr.hidden >= 1) {
-      add("HIDDEN_IFRAME", `${ifr.hidden} invisible zero-dimension iframe(s) detected`, 1.5);
+      if (!isCleanContext || p.shared_hosting) {
+        add("HIDDEN_IFRAME", `${ifr.hidden} invisible zero-dimension iframe(s) detected`, 1.5);
+      }
     }
     if (res.total >= 8 && extResRatio >= 0.6) {
-      add("EXTERNAL_RESOURCES", "Over 60% of assets & styling are hotlinked from other origins (page clone)", 1.2);
+      if (!isCleanContext) {
+        add("EXTERNAL_RESOURCES", "Over 60% of assets & styling are hotlinked from other origins (page clone)", 1.2);
+      }
     }
     if (links.total >= 5 && nullLinkRatio >= 0.5) {
       add("NULL_LINKS", "Over 50% of page navigation links are empty '#' placeholders", 1.5);
@@ -707,13 +730,13 @@
     if (dom.rightClickBlocked) {
       add("RIGHT_CLICK_BLOCKED", "Context menu and right-click inspections are explicitly disabled", 1.0);
     }
-    if (dom.sensitiveFields > 0) {
+    if (dom.sensitiveFields > 0 && !isCleanContext) {
       add("SENSITIVE_FIELDS", "Form requests high-risk payment or identity numbers (OTP, CVV, Aadhaar)", 1.8);
     }
-    if (credHits >= 3) {
+    if (credHits >= 3 && !isCleanContext) {
       add("CREDENTIAL_TEXT", "Page content contains dense credential harvesting requests", 1.2);
     }
-    if (urgHits >= 2) {
+    if (urgHits >= 2 && !isCleanContext) {
       add("URGENCY_TEXT", "Coercive urgency tactics used ('account suspended within 24 hours')", 1.2);
     }
     if (p.shared_hosting && hasPw) {
@@ -741,7 +764,13 @@
   // ─── 10. MULTI-STAGE NOISY-OR RISK FUSION ──────────────────────────────────
   function analyzeFull(rawUrl, dom = null, allowlist = []) {
     const urlRes = analyzeUrl(rawUrl, allowlist);
-    if (urlRes.trusted || !dom) return urlRes;
+    if (urlRes.trusted || !dom) {
+      urlRes.modules = {
+        url: { score: urlRes.risk, points: urlRes.points || 0 },
+        dom: { score: 0.0, points: 0.0, has_password: false }
+      };
+      return urlRes;
+    }
 
     const domRes = analyzeDom(dom, rawUrl);
     const wUrl = 1.00;
@@ -760,6 +789,11 @@
       fusedRisk = Math.max(fusedRisk, 0.88);
     } else if (urlStrong && domClaim) {
       fusedRisk = Math.max(fusedRisk, 0.82);
+    }
+
+    // Clean baseline preservation: If both URL and DOM have 0 threat points, guarantee 0 risk
+    if (urlRes.risk === 0 && domRes.points === 0) {
+      fusedRisk = 0.0;
     }
 
     fusedRisk = Math.max(0.0, Math.min(1.0, fusedRisk));
@@ -781,6 +815,10 @@
       trusted: false,
       reasons: allReasons,
       graph: urlRes.graph,
+      modules: {
+        url: { score: urlRes.risk, points: urlRes.points || 0 },
+        dom: { score: domRes.score, points: domRes.points || 0, has_password: domRes.has_password }
+      },
       timing_ms: {
         url_ms: urlRes.timing_ms.total_ms,
         dom_ms: domRes.timing_ms,
@@ -789,11 +827,131 @@
     };
   }
 
+  // ─── 11. GMAIL SENDER & PHISHING AUDITOR ──────────────────────────────────
+  function analyzeEmail(senderName, senderEmail, subjectText = "") {
+    senderName = String(senderName || "").trim();
+    senderEmail = String(senderEmail || "").trim().toLowerCase();
+    subjectText = String(subjectText || "").trim();
+
+    // Extract domain from sender email (e.g. "service@paypal.com" -> "paypal.com")
+    let senderDomain = "";
+    const emailMatch = senderEmail.match(/@([a-z0-9.-]+)/i);
+    if (emailMatch) {
+      senderDomain = emailMatch[1].toLowerCase().replace(/^www\./, "");
+    }
+    const senderP = senderDomain ? parseUrl("https://" + senderDomain) : null;
+
+    const FREE_WEBMAIL = new Set([
+      "gmail.com", "googlemail.com", "yahoo.com", "yahoo.co.in", "hotmail.com",
+      "outlook.com", "live.com", "icloud.com", "mail.ru", "yandex.com",
+      "proton.me", "protonmail.com", "zoho.com", "aol.com", "gmx.com"
+    ]);
+
+    let verdict = "safe";
+    let risk = 0.0;
+    let badge = "SAFE";
+    let alertTitle = "Safe Sender";
+    let warningReason = "";
+    let isSpoofed = false;
+    let matchedBrand = null;
+
+    // Check if sender display name mentions any protected brand
+    const normName = senderName.toLowerCase();
+    for (const b of BRANDS) {
+      const brandHit = b.keywords.some(kw => {
+        if (kw.length < 3) return false;
+        const regex = new RegExp(`(^|\\W)${kw}(\\W|$)`, "i");
+        return regex.test(normName);
+      });
+
+      if (brandHit) {
+        matchedBrand = b;
+        const isOfficialDomain = b.domains.some(d => senderDomain === d || senderDomain.endsWith("." + d));
+        if (isOfficialDomain) {
+          verdict = "safe";
+          risk = 0.01;
+          badge = "OFFICIAL";
+          alertTitle = `Verified Official ${b.name}`;
+          warningReason = `Authenticated sender domain (${senderDomain}) of ${b.name}`;
+          return { verdict, risk, badge, alertTitle, warningReason, matchedBrand: b.name, senderDomain, isOfficial: true };
+        } else {
+          isSpoofed = true;
+          if (FREE_WEBMAIL.has(senderDomain)) {
+            verdict = "phishing";
+            risk = 0.95;
+            badge = "IMPERSONATION";
+            alertTitle = `Critical Spoof: ${b.name} Impersonator`;
+            warningReason = `Display name claims "${senderName}", but email is from a free @${senderDomain} account!`;
+          } else {
+            verdict = "phishing";
+            risk = 0.92;
+            badge = "DECEPTIVE SENDER";
+            alertTitle = `Brand Spoofing: ${b.name} Deception`;
+            warningReason = `Display name claims "${senderName}", but actual sender domain is "${senderDomain}"!`;
+          }
+          break;
+        }
+      }
+    }
+
+    if (!isSpoofed && senderP) {
+      const sig = brandSignal(senderP);
+      if (sig) {
+        verdict = "phishing";
+        risk = 0.88;
+        badge = "LOOKALIKE DOMAIN";
+        alertTitle = `Deceptive Domain: ${sig.name} Clone`;
+        warningReason = `Sender domain "${senderDomain}" is a visual lookalike/typosquat of ${sig.name}`;
+      } else if (SUSPICIOUS_TLDS.has(senderP.suffix)) {
+        verdict = "suspicious";
+        risk = 0.65;
+        badge = "SUSPICIOUS TLD";
+        alertTitle = "High-Risk Domain";
+        warningReason = `Sender domain uses top-level domain .${senderP.suffix} frequently abused for phishing.`;
+      }
+    }
+
+    // Check subject for urgency / credential extortion
+    if (subjectText) {
+      const subLower = subjectText.toLowerCase();
+      const hasUrgency = URGENCY_WORDS.some(w => subLower.includes(w));
+      const hasCreds = CREDENTIAL_WORDS.some(w => subLower.includes(w));
+      if (hasUrgency || hasCreds) {
+        if (isSpoofed) {
+          risk = Math.max(risk, 0.98);
+        } else if (verdict === "safe" && FREE_WEBMAIL.has(senderDomain) && (subLower.includes("suspended") || subLower.includes("verify") || subLower.includes("password"))) {
+          verdict = "suspicious";
+          risk = 0.60;
+          badge = "SUSPICIOUS LURE";
+          alertTitle = "Urgent Account Warning";
+          warningReason = "Email contains urgent account/security threats from an unverified public sender.";
+        }
+      }
+    }
+
+    if (verdict === "safe") {
+      alertTitle = "Legitimate Sender";
+      warningReason = senderDomain ? `Standard authenticated domain: ${senderDomain}` : "Standard contact";
+    }
+
+    return {
+      verdict,
+      risk,
+      badge,
+      alertTitle,
+      warningReason,
+      matchedBrand: matchedBrand ? matchedBrand.name : null,
+      senderDomain,
+      isOfficial: false
+    };
+  }
+
   // Export to global scope
   const api = {
     analyzeUrl,
     analyzeDom,
     analyzeFull,
+    analyzeEmail,
     parseUrl,
     skeleton,
     hasConfusableChars,

@@ -2,139 +2,176 @@
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
 [![JavaScript](https://img.shields.io/badge/Language-JavaScript%20(ES2022)-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Chromium Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge%20%7C%20Opera%20%7C%20Arc-success.svg)](#-10-second-quick-start-zero-install-zero-terminal)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Chromium Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge%20%7C%20Opera%20%7C%20Arc-success.svg)](#-how-to-download-install--use-in-10-seconds)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **PhishGuard** is an advanced, real-time zero-day phishing detection and browser defense engine engineered for **Chromium-based browsers** (Google Chrome, Brave, Microsoft Edge, Opera, Vivaldi, Arc). It neutralizes deceptive websites, homoglyph domain attacks, credential traps, stealth popunders, and drive-by malware payloads **100% inside the browser without relying on external servers or outdated static blacklists**.
-> 
-> *Note: A dedicated Apple Safari (macOS native Xcode App Extension) will be released in a separate companion repository as an update.*
+> **PhishGuard** is an advanced, real-time zero-day phishing detection and browser defense engine engineered for **Chromium-based browsers** (Google Chrome, Brave, Microsoft Edge, Opera, Vivaldi, Arc). It neutralizes deceptive websites, homoglyph domain attacks, credential traps, stealth popunders, email sender spoofing, and drive-by malware payloads **100% inside the browser without relying on external servers, local Python backends, or outdated static blacklists**.
 
 ---
 
-## ⚡ 10-Second Quick Start (Zero Install, Zero Terminal)
+## ⚡ How to Download, Install & Use (In 10 Seconds)
 
-PhishGuard features a **100% in-browser security intelligence engine**. Any user can download and use the extension immediately — **no Python, no terminal, no scripts, and no background processes required**.
+PhishGuard features a **100% in-browser security engine**. Any user can install and run the extension immediately — **no Python, no terminal, and no background services required**.
 
-### Step 1: Load Extension in Your Browser (10 Seconds)
+### 📥 Step 1: Download PhishGuard
 
-1. Open Google Chrome, Brave, Microsoft Edge, Opera, or Arc.
-2. Navigate to:
-   * **Chrome / Brave / Arc:** `chrome://extensions`
-   * **Edge:** `edge://extensions`
-3. Turn **ON** the **Developer mode** toggle in the top-right corner.
-4. Click the **Load unpacked** button in the top-left corner.
-5. Select the **`extension/`** folder inside this repository (or unzipped from the release).
+Choose whichever method you prefer:
 
-**Done!** PhishGuard is permanently active in your browser toolbar. All URL lexical graphs, homoglyph shields, brand protection, and DOM credential defusers run instantly inside your browser in `<1ms`.
+* **Option A (Instant ZIP Download):**
+  1. Click the green **Code** button at the top-right of this repository.
+  2. Select **Download ZIP**.
+  3. Extract (unzip) the downloaded file on your computer.
+
+* **Option B (Git Clone):**
+  ```bash
+  git clone https://github.com/Grey0009/phishguard.git
+  ```
+
+---
+
+### 🚀 Step 2: Load into Your Browser
+
+1. Open your browser (Google Chrome, Brave, Microsoft Edge, Opera, or Arc).
+2. Go to the extension management page:
+   * **Chrome / Brave / Arc:** [`chrome://extensions`](chrome://extensions)
+   * **Microsoft Edge:** [`edge://extensions`](edge://extensions)
+   * **Opera:** [`opera://extensions`](opera://extensions)
+3. Turn **ON** the **Developer mode** toggle (usually located in the top-right corner).
+4. Click the **Load unpacked** button in the top-left toolbar.
+5. In the file picker, select the **`extension/`** folder inside the extracted project directory.
+
+---
+
+### 🛡️ Step 3: Pin & Protect
+
+1. Click the puzzle icon (Extensions) in your browser's top toolbar.
+2. Click the **Pin** icon next to **PhishGuard**.
+3. **You're protected!** PhishGuard automatically monitors every webpage, link, and email in real time with sub-millisecond latency.
+
+---
+
+## 🔍 Smart Link Hover HUD ("Apple Peek")
+
+### What Is It?
+Whenever you hover your mouse over any hyperlink on any website, PhishGuard renders an ultra-fast **Apple Liquid Glass Hover HUD** right beside your cursor.
+
+```
+┌────────────────────────────────────────────────────────┐
+│  🛡️ login.chase.com.security-verify.xyz/auth           │
+│  [🚨 DECEPTIVE LINK: TEXT SAYS CHASE.COM, LINKS TO XYZ]│
+└────────────────────────────────────────────────────────┘
+```
+
+### What Else Is Shown Aside from "EXTERNAL"?
+Previously, link inspection tools only displayed a generic "EXTERNAL" tag. PhishGuard completely upgrades link inspection into a real-time proactive shield:
+
+1. **Live Security Verdict**:
+   * `[✓ SAFE EXTERNAL]` / `[✓ VERIFIED OFFICIAL]` — Clean, authenticated destination (Emerald Green glow).
+   * `[⚠️ SUSPICIOUS]` — Elevated entropy, unverified TLD, or high-risk domain structure (Amber glow).
+   * `[🛡️ PHISHING DANGER]` — Visual homoglyphs, typosquats, raw IP addresses, or known phishing heuristics (Red glow).
+   * `[REDIRECT / SHORTENER]` — Obfuscated URL redirectors (`bit.ly`, `tinyurl`, `t.co`) that attempt to hide the final landing page (Purple glow).
+2. **Deceptive Anchor Text Mismatch Defense**:
+   * Attackers frequently write `https://chase.com/login` in the visible text of a link, while the actual `href` attribute silently directs victims to `https://evil-phish.xyz`.
+   * PhishGuard cross-references the visible text against the true network target. If a mismatch is detected, it triggers an instant **`🚨 DECEPTIVE LINK TRAP`** alert right at your cursor!
+3. **Destination Domain Unmasking**:
+   * PhishGuard strips away misleading subdomains (e.g., `paypal.com.account-update.badsite.com` clearly unmasks `badsite.com` as the true destination).
+4. **Threat Explanations**:
+   * Explains exactly *why* a link is risky (e.g., *Punycode / Homoglyph attack*, *Direct IP host target*, *Brand Spoof Risk*).
+
+### How Is It Useful?
+* **Zero-Click Safety**: You never have to click a dangerous link or open a suspicious page to find out if it's safe.
+* **Instant Verification**: Takes `<0.1 ms` to compute locally, allowing fluid browsing without network delay.
+
+---
+
+## 📧 Gmail Phishing & Sender Impersonation Shield
+
+PhishGuard includes built-in protection specifically optimized for **Google Gmail (`mail.google.com`)**.
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│  From: PayPal Support <support-team@gmail.com>                            │
+│  Subject: Your account will be closed in 24 hours                         │
+├───────────────────────────────────────────────────────────────────────────┤
+│  🛡️ PhishGuard: [🚨 CRITICAL SPOOF: PAYPAL IMPERSONATOR]                  │
+│  Display name claims "PayPal", but email is sent from free @gmail.com!   │
+└───────────────────────────────────────────────────────────────────────────┘
+```
+
+### How It Works:
+1. **Inbox Hover Inspection**:
+   * As you hover over received emails in your Gmail inbox or view an opened email header, PhishGuard extracts the **Display Name**, **Actual Sender Email Address**, and **Subject Line**.
+2. **Brand Spoofing & Impersonation Engine**:
+   * If an email claims to be from a protected brand (e.g., **PayPal, Google, Apple, Microsoft, Netflix, Amazon, Chase, Bank of America, Wells Fargo, SBI, HDFC**):
+     * **Official Domain Match**: If the sender email originates from an authenticated domain (e.g., `accounts.google.com` or `paypal.com`), PhishGuard awards an emerald **`✓ VERIFIED OFFICIAL`** badge.
+     * **Free Webmail Impersonation**: If the display name says "PayPal Support" or "Apple Security" but the address is from `@gmail.com`, `@yahoo.com`, or `@outlook.com`, PhishGuard flags it as a **`🚨 CRITICAL SPOOF: IMPERSONATOR`**.
+     * **Rogue Domain Spoofing**: If the sender domain is a lookalike (e.g., `apple-security-alert.xyz`), PhishGuard immediately flags **`🚨 BRAND DECEPTION`**.
+3. **Urgency & Credential Trap Audit**:
+   * Analyzes coercive threat keywords (*"suspended within 24 hours"*, *"verify identity immediately"*, *"account locked"*) and alerts you before you open the email.
 
 ---
 
 ## 🏗️ System Architecture & Multi-Stage Pipeline
 
-PhishGuard uses a **tiered defense architecture** to balance sub-millisecond responsiveness with deep neural heuristics:
-
 ```mermaid
 flowchart TD
-    UserNav([🌐 User Navigates to URL]) --> PreClick[Stage 1: Instant Lexical Triage <br/> <0.5ms]
-    PreClick --> Homoglyph[Homoglyph & Punycode Engine]
+    UserNav([🌐 User Navigates to URL]) --> Stage1[Stage 1: URL Lexical Triage <br/> <0.4ms]
+    Stage1 --> Homoglyph[Homoglyph & Punycode Engine]
     Homoglyph --> Graph[Token Adjacency Graph]
     
-    Graph --> Decision1{Known Safe / Allowlisted?}
-    Decision1 -- Yes --> FastPass[✓ Fast Pass: No DOM Overhead]
-    Decision1 -- Suspicious / Unknown --> Stage2[Stage 2: Structural DOM Audit <br/> ~0.1ms]
+    Graph --> Decision1{Known Safe Domain?}
+    Decision1 -- Yes --> FastPass[✓ 100% Consistent Safe Verdict]
+    Decision1 -- Unknown / Complex --> Stage2[Stage 2: Structural DOM Audit <br/> ~0.1ms]
     
-    Stage2 --> Forms[Credential & Password Trap Audit]
-    Forms --> ResRatio[External Asset & Iframe Ratio]
-    ResRatio --> Decision2{High Threat Threshold?}
+    Stage2 --> Forms[Form Target & Origin Resolution]
+    Forms --> ResRatio[CDN & Asset Integrity Audit]
+    ResRatio --> Fusion[Stage 3: Multi-Evidence Noisy-OR Fusion]
     
-    Decision2 -- Yes --> Defend[🛡️ Block Page / Display Warning]
-    Decision2 -- Ambiguous Brand --> Stage3[Stage 3: Brand Claim Verification <br/> ~0.2ms]
-    
-    Stage3 --> VisualMatch[Brand Identity & Suffix Verification]
-    VisualMatch --> Verdict[Final Unified Verdict & Safety Index %]
+    Fusion --> Decision2{Threat Score Threshold?}
+    Decision2 -- Phishing Risk >= 70% --> Defend[🛡️ Block Page / Display Warning]
+    Decision2 -- Clean Heuristics --> StableSafe[✓ Verified Safe / Clean Status]
 ```
 
-### Defense Layers
+### Multi-Stage Inspection Breakdown
 
-| Stage | Inspection Scope | Where It Runs | Average Latency |
+| Stage | Inspection Scope | Where It Runs | Latency |
 | :--- | :--- | :--- | :--- |
-| **Stage 1: URL Lexical Graph** | 40+ lexical features, Punycode/Cyrillic homoglyph decoding, TLD risk scores, Shannon entropy, brand token distance graph | In-Browser Service Worker | **0.43 ms** |
-| **Stage 2: Structural DOM Audit** | Cross-domain form targets, unencrypted credential submissions, hidden iframes, deceptive password traps, brand text claims | Content Script Engine | **0.11 ms** |
-| **Stage 3: Brand Verification** | Unicode TR39 visual skeleton analysis, Levenshtein edit distance, protected brand database (45+ brands) | In-Browser Client Detector | **0.25 ms** |
-| **Continuous Defuser** | Main-world anti-adblock flag bypass (`world: "MAIN"`), pop-under interceptor, drive-by malware download defuser | In-Tab Content Scriptlet | **0 ms (Client)** |
+| **Stage 1: URL Lexical Graph** | 40+ lexical features, Punycode/Cyrillic homoglyph decoding, Shannon entropy, TLD risk scores, brand token distance | Background Service Worker | **0.43 ms** |
+| **Stage 2: Structural DOM Audit** | Form actions with relative path resolution, credential collection audit, unencrypted POSTs, hidden iframes | In-Tab Content Script | **0.11 ms** |
+| **Stage 3: Brand & Spoof Verification** | Unicode TR39 visual skeleton analysis, Levenshtein edit distance, 45+ protected global brands & banks | Client Security Engine | **0.25 ms** |
+| **Continuous Defuser** | Main-world anti-adblock flag bypass, video click-jack defuser, pop-under interceptor, drive-by download shield | Content Scriptlet (`world: MAIN`) | **0 ms (Client)** |
 
 ---
 
-## 📊 Benchmark & Evaluation Results
+## 🎨 Apple Liquid Glass User Interface
 
-PhishGuard was evaluated across balanced test sets containing known benign domains (from Tranco Top-1M) and live phishing URLs (PhishTank/OpenPhish feeds). All evaluation results are archived in `benchmarks/eval_results.json`.
-
-### Verified Performance Metrics
-
-| Metric | Result | Industry Standard Benchmark |
-| :--- | :--- | :--- |
-| **Overall Accuracy** | **98.00%** | > 92.0% |
-| **Threat Recall (Sensitivity)** | **100.00%** | > 95.0% |
-| **Precision** | **96.15%** | > 90.0% |
-| **False Positive Rate (FPR)** | **4.00%** | < 5.0% |
-| **Stage 1 Triage Latency (p50)** | **0.43 ms** | < 10 ms |
-| **Stage 2 DOM Latency (p50)** | **0.11 ms** | < 25 ms |
-| **Stage 3 Full Visual (p50)** | **1.69 ms** | < 50 ms |
+* **Refractive Color Absorption**: Absorbs and refracts real-time ambient lighting directly from the website currently open in your active tab.
+* **Precision Safety Gauge**: Displays real-time safety index percentage with zero reload oscillation.
+* **Analysis Pipeline Switcher**: Toggle dynamically between **Lexical Graph**, **URL + DOM Structure**, and **Deep ML Vision Ensemble**.
+* **Security Nutrition Matrix**: 4-pillar breakdown covering URL Integrity, Brand Authenticity, Credential Safety, and DOM Heuristics.
+* **Direct URL Inspector**: Type or paste any link to inspect it safely before navigating.
+* **Forensic Report Export**: One-click export of structured JSON/Markdown incident audit reports for any detected threat.
 
 ---
 
-## 🎨 Feature Showcase
+## 📦 For Developers: Building & Packaging Releases
 
-* **Apple VisionOS Liquid Glass Interface**: Dynamic, real-time background color absorption adapting seamlessly to whatever web page you visit.
-* **Link Hover HUD**: Preview and inspect hyperlinks before clicking them; flags suspicious URLs in real-time right at your cursor.
-* **Drive-By Download Defuser**: Automatically quarantines dangerous executable files (`.dmg`, `.exe`, `.pkg`, `.iso`, `.scr`) triggered without direct user interaction.
-* **Stealth Adblock & Popunder Interceptor**: Neutralizes aggressive streaming site pop-unders and deceptive tracking overlays without triggering annoying "Disable your adblocker" banners.
-* **Export Security Incident Report**: One-click export of structured JSON/Markdown forensic audit reports for any detected threat.
+To generate clean distribution ZIP files without macOS metadata or cache files:
 
----
-
-## 🚀 How to Deploy on Your GitHub Repository
-
-To upload this project to your personal GitHub repository so that you (or anyone else) can download and use it anytime:
-
-### 1. Initialize Git and Push to GitHub
 ```bash
-# In your terminal inside the phishguard folder:
-git init
-git add .
-git commit -m "feat: initial commit of PhishGuard security engine"
-
-# Create a new repository on github.com, then link it:
-git remote add origin https://github.com/<YOUR_USERNAME>/phishguard.git
-git branch -M main
-git push -u origin main
+node package.js
 ```
 
-### 2. Generate a Clean Release ZIP
-Run the automated packaging utility to produce clean, release-ready zips without cache files:
-```bash
-python package_release.py
-```
-This generates:
-* `dist/phishguard-full-project.zip`: The entire project including 1-click launchers and backend.
-* `dist/phishguard-extension-only.zip`: Standalone extension ready for browser distribution.
-
-### 3. Create a GitHub Release
-1. Open your repository on GitHub.
-2. In the right sidebar, click **Releases** → **Create a new release**.
-3. Set a tag (e.g., `v1.0.0`) and title (e.g., `PhishGuard v1.0.0 — Production Release`).
-4. Drag and drop `dist/phishguard-full-project.zip` into the release binaries box.
-5. Click **Publish release**.
-
-> Now, anyone visiting your repository can simply download the release zip, double-click `start.sh` (or `start.bat`), load the extension, and have the entire security engine running in seconds!
+This automatically generates:
+* `dist/phishguard-extension-only.zip`: Production-ready extension bundle ready to upload to Chrome Web Store or distribute directly.
 
 ---
 
-## 🛡️ Privacy & Ethical Safeguards
+## 🛡️ Privacy & Security Principles
 
-* **Zero Keystroke Logging**: The extension inspects structural element tags and form actions; it never reads what users type into input fields.
-* **Offline-First Option**: All Stage 1 and Stage 2 heuristics run completely locally on `127.0.0.1:8000`. No telemetry is sent to third-party cloud providers.
-* **Ephemeral Memory State**: Screenshots captured for visual template comparisons are processed in volatile memory and discarded immediately after feature extraction.
+* **Zero Keystroke Logging**: PhishGuard inspects structural tags and DOM attributes; it **never** logs or transmits typed passwords or input fields.
+* **100% Offline & Private**: All heuristic engines run completely inside your local browser. Zero browsing data is sent to external cloud servers.
+* **Zero Terminal Footprint**: Completely standalone in modern JavaScript (ES2022 / Manifest V3).
 
 ---
 

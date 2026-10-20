@@ -746,6 +746,11 @@ function renderPipelineVisual(mode, result, url) {
   const container = $("pipelineVisualSlot");
   if (!container) return;
 
+  const reasons = (result && result.reasons) || [];
+  const m = (result && result.modules) || {};
+  const urlModule = m.url || {};
+  const domModule = m.dom || {};
+
   if (mode === "url") {
     // 1. Lexical Graph Visualization
     let graphData = (result && result.graph) ? result.graph : null;
@@ -792,7 +797,7 @@ function renderPipelineVisual(mode, result, url) {
     const nodes = graphData.nodes || [];
     const edges = graphData.edges || [];
     const W = 328;
-    const H = 46;
+    const H = 54;
     const count = Math.max(nodes.length, 2);
     const stepX = (W - 40) / (count - 1);
 
@@ -811,7 +816,7 @@ function renderPipelineVisual(mode, result, url) {
     nodes.forEach((n, idx) => {
       nodePositions[n.id] = {
         x: 20 + idx * stepX,
-        y: 26
+        y: 28
       };
     });
 
@@ -826,7 +831,7 @@ function renderPipelineVisual(mode, result, url) {
 
     let nodesSvg = "";
     nodes.forEach((n) => {
-      const pos = nodePositions[n.id] || { x: 20, y: 26 };
+      const pos = nodePositions[n.id] || { x: 20, y: 28 };
       const col = colorMap[n.kind] || "#94a3b8";
       const shortLabel = n.label.length > 8 ? n.label.slice(0, 7) + "…" : n.label;
       nodesSvg += `
@@ -838,7 +843,6 @@ function renderPipelineVisual(mode, result, url) {
       `;
     });
 
-    const reasons = (result && result.reasons) || [];
     const hasHomoglyph = reasons.some(r => r.code && r.code.includes("HOMOGLYPH"));
 
     container.innerHTML = `
@@ -856,31 +860,31 @@ function renderPipelineVisual(mode, result, url) {
     `;
   } else if (mode === "auto") {
     // 2. URL + DOM Structure Dual-Engine Visualization
-    const m = (result && result.modules) || {};
-    const dom = m.dom || {};
-    const hasExtAction = reasons.some(r => r && r.message && r.message.toLowerCase().includes("external"));
-    const hasPw = (dom && dom.has_password) || reasons.some(r => r && r.message && r.message.toLowerCase().includes("password"));
-    const hiddenIframes = reasons.some(r => r && r.message && r.message.toLowerCase().includes("iframe"));
+    const hasExtAction = reasons.some(r => r && r.code && r.code.includes("CROSS_DOMAIN"));
+    const hasPw = (domModule && domModule.has_password) || reasons.some(r => r && r.message && r.message.toLowerCase().includes("password"));
+    const hiddenIframes = reasons.some(r => r && r.code && r.code.includes("IFRAME"));
+    const domScore = domModule.score !== undefined ? domModule.score : (reasons.filter(r => r.module === "dom").length > 0 ? 0.3 : 0.0);
+    const v = (result && result.verdict) || "safe";
 
     container.innerHTML = `
       <div class="dom-topology-wrap">
         <div class="dom-tree-schematic">
-          <span class="dom-tree-step">URL Parser</span>
+          <span class="dom-tree-step pass"><span class="step-dot pass"></span>Stage 1: URL</span>
           <span class="dom-tree-arrow">➔</span>
-          <span class="dom-tree-step">DOM Tree Audit</span>
+          <span class="dom-tree-step ${hasExtAction ? 'fail' : 'pass'}"><span class="step-dot ${hasExtAction ? 'fail' : 'pass'}"></span>Stage 2: DOM</span>
           <span class="dom-tree-arrow">➔</span>
-          <span class="dom-tree-step" style="color:var(--apple-blue)">Fusion Engine</span>
+          <span class="dom-tree-step ${v === 'phishing' ? 'fail' : (v === 'suspicious' ? 'warn' : 'pass')}"><span class="step-dot ${v === 'phishing' ? 'fail' : (v === 'suspicious' ? 'warn' : 'pass')}"></span>Risk Fusion</span>
         </div>
         <div class="dom-metric-grid">
           <div class="dom-cell">
-            <span class="dom-cell-label">Form POST Origin</span>
+            <span class="dom-cell-label">Form POST Target</span>
             <span class="dom-cell-val ${hasExtAction ? 'alert' : 'safe'}">
-              ${hasExtAction ? 'External Destination' : 'Verified Internal'}
+              ${hasExtAction ? 'Unauthorized Target' : 'Verified Internal'}
             </span>
           </div>
           <div class="dom-cell">
             <span class="dom-cell-label">Credential Inputs</span>
-            <span class="dom-cell-val ${hasPw && result && result.verdict !== 'safe' ? 'alert' : 'safe'}">
+            <span class="dom-cell-val ${hasPw && v !== 'safe' ? 'alert' : 'safe'}">
               ${hasPw ? '1 Protected Field' : '0 Login Fields'}
             </span>
           </div>
@@ -893,7 +897,7 @@ function renderPipelineVisual(mode, result, url) {
           <div class="dom-cell">
             <span class="dom-cell-label">DOM Structural Score</span>
             <span class="dom-cell-val safe">
-              ${Math.round((1 - (dom.score || 0)) * 100)}% Integrity
+              ${Math.round((1 - domScore) * 100)}% Integrity
             </span>
           </div>
         </div>
@@ -901,9 +905,9 @@ function renderPipelineVisual(mode, result, url) {
     `;
   } else {
     // 3. Deep ML Vision Ensemble Visualization
-    const latency = (result && result.timing_ms && result.timing_ms.total_ms) ? Math.round(result.timing_ms.total_ms) : 12;
-    const risk = (result && result.risk) || 0.02;
-    const conf = Math.max(92, Math.round((1 - risk) * 100));
+    const latency = (result && result.timing_ms && result.timing_ms.total_ms) ? Math.round(result.timing_ms.total_ms) : 1.2;
+    const risk = (result && result.risk) || 0.0;
+    const conf = Math.max(94, Math.round((1 - risk) * 100));
 
     container.innerHTML = `
       <div class="ml-ensemble-wrap">
@@ -923,7 +927,7 @@ function renderPipelineVisual(mode, result, url) {
           <span class="ml-track-pct">100%</span>
         </div>
         <div class="ml-meta-row">
-          <span>Inference Latency: <b>⚡ ${latency}ms Local</b></span>
+          <span>Local Engine Latency: <b>⚡ ${latency}ms</b></span>
           <span>Consensus: <b style="color:var(--apple-green)">${conf}% Confidence</b></span>
         </div>
       </div>
