@@ -156,7 +156,7 @@ if ($isAlreadyRunning) {
     if ($running) {
         Write-Host "[✓] Background engine started silently (listening on 127.0.0.1:8000)." -ForegroundColor Green
     } else {
-        Write-Host "[!] Engine started in background." -ForegroundColor Yellow
+        Write-Host "[*] Background engine launched." -ForegroundColor Yellow
     }
 }
 
@@ -167,7 +167,10 @@ try {
     $startupFolder = [Environment]::GetFolderPath("Startup")
     if (Test-Path $startupFolder) {
         $vbsPath = Join-Path $startupFolder "PhishGuard_Startup.vbs"
-        $vbsContent = "Set WshShell = CreateObject(`"WScript.Shell`")`nWshShell.Run `"$pythonwCmd `"`"$runScript`"`" --host 127.0.0.1 --port 8000`", 0, False"
+        $rawPy = $pythonwCmd.Replace('"', '')
+        $vbsLine1 = 'Set WshShell = CreateObject("WScript.Shell")'
+        $vbsLine2 = 'WshShell.Run Chr(34) & "' + $rawPy + '" & Chr(34) & " " & Chr(34) & "' + $runScript + '" & Chr(34) & " --host 127.0.0.1 --port 8000", 0, False'
+        $vbsContent = $vbsLine1 + [Environment]::NewLine + $vbsLine2
         [IO.File]::WriteAllText($vbsPath, $vbsContent)
         Write-Host "[✓] Auto-start configured (PhishGuard runs silently on Windows login)." -ForegroundColor Green
     }
@@ -201,12 +204,12 @@ try {
 
 Write-Host ""
 Write-Host "===================================================================" -ForegroundColor Green
-Write-Host "              INSTALLATION SUCCESSFUL & RUNNING                    " -ForegroundColor White
+Write-Host "              INSTALLATION SUCCESSFUL AND RUNNING                  " -ForegroundColor White
 Write-Host "===================================================================" -ForegroundColor Green
 Write-Host "  1. Opening your browser to: $extUrl" -ForegroundColor Cyan
-Write-Host "  2. Turn ON 'Developer mode' (top right toggle)." -ForegroundColor White
-Write-Host "  3. Click 'Load unpacked' and press Ctrl+V (path already copied!)." -ForegroundColor White
-Write-Host "  4. Click 'Select Folder'." -ForegroundColor White
+Write-Host "  2. Turn ON Developer mode (top right toggle)." -ForegroundColor White
+Write-Host "  3. Click Load unpacked and press Ctrl+V (path is in clipboard)." -ForegroundColor White
+Write-Host "  4. Click Select Folder." -ForegroundColor White
 Write-Host "===================================================================" -ForegroundColor Green
 Write-Host "  PhishGuard is running permanently in the background." -ForegroundColor Gray
 Write-Host "  No terminal window needs to stay open." -ForegroundColor Gray
@@ -218,9 +221,10 @@ Start-Process $browserCmd -ArgumentList $extUrl -ErrorAction SilentlyContinue
 # Show friendly native GUI dialog
 try {
     Add-Type -AssemblyName System.Windows.Forms
+    $dialogMsg = "PhishGuard is now running in the background!`n`nTo complete 1-time setup in your browser:`n1. Toggle Developer mode ON (top-right)`n2. Click Load unpacked`n3. Press Ctrl+V (folder path already copied) and click Select Folder`n`nPhishGuard is now permanently active in your toolbar!"
     [System.Windows.Forms.MessageBox]::Show(
-        "PhishGuard is now running silently in the background!`n`nTo complete 1-time setup in your browser:`n1. Toggle 'Developer mode' ON (top-right).`n2. Click 'Load unpacked'.`n3. Press Ctrl+V (folder path is already copied!) and click 'Select Folder'.`n`nPhishGuard is now permanently active in your toolbar!",
-        "PhishGuard — Setup Complete",
+        $dialogMsg,
+        "PhishGuard - Setup Complete",
         [System.Windows.Forms.MessageBoxButtons]::OK,
         [System.Windows.Forms.MessageBoxIcon]::Information
     ) | Out-Null
