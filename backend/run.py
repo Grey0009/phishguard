@@ -4,6 +4,14 @@ Uses `waitress` (pure-Python production WSGI server, works on Windows/Linux/macO
 when installed, otherwise falls back to Flask's development server.
 """
 import argparse
+import os
+import sys
+
+# Support windowless execution (pythonw.exe on Windows / background daemons)
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
 
 from phishguard.app import create_app
 

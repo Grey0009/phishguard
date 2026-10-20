@@ -89,8 +89,8 @@ echo -e "  4. Select this folder:"
 echo -e "     ${GREEN}$ROOT_DIR/extension${NC}"
 echo ""
 echo -e "${BOLD}${CYAN}=================================================================${NC}"
-echo -e "${GREEN}${BOLD}✓ Starting PhishGuard Server on http://127.0.0.1:8000 ...${NC}"
-echo -e "  (Press ${YELLOW}Ctrl+C${NC} anytime to stop the server)"
+echo -e "${GREEN}${BOLD}✓ PhishGuard Security Intelligence Engine${NC}"
+echo -e "  Starting background service & configuring browser extension..."
 echo -e "${BOLD}${CYAN}=================================================================${NC}"
 echo ""
 
@@ -146,5 +146,33 @@ except Exception:
   fi
 ) &
 
-# Run backend server
-exec "$VENV_PY" "$BACKEND_DIR/run.py" --host 127.0.0.1 --port 8000
+# Copy extension path to clipboard
+if command -v pbcopy >/dev/null 2>&1; then
+  printf "%s/extension" "$ROOT_DIR" | pbcopy
+  echo -e "${GREEN}✓${NC} Extension directory copied to your clipboard!"
+elif command -v xclip >/dev/null 2>&1; then
+  printf "%s/extension" "$ROOT_DIR" | xclip -selection clipboard 2>/dev/null || true
+  echo -e "${GREEN}✓${NC} Extension directory copied to your clipboard!"
+elif command -v wl-copy >/dev/null 2>&1; then
+  printf "%s/extension" "$ROOT_DIR" | wl-copy 2>/dev/null || true
+  echo -e "${GREEN}✓${NC} Extension directory copied to your clipboard!"
+fi
+
+# Run backend server in background (no terminal window needed)
+if curl -s "http://127.0.0.1:8000/health" >/dev/null 2>&1; then
+  echo -e "${GREEN}✓${NC} PhishGuard engine is already running on http://127.0.0.1:8000"
+else
+  nohup "$VENV_PY" "$BACKEND_DIR/run.py" --host 127.0.0.1 --port 8000 > "$BACKEND_DIR/server.log" 2>&1 &
+  echo -e "${GREEN}✓${NC} PhishGuard engine started silently in the background (PID: $!)."
+fi
+
+echo ""
+echo -e "${BOLD}${GREEN}=================================================================${NC}"
+echo -e "${BOLD}              INSTALLATION & BACKGROUND SERVICE READY            ${NC}"
+echo -e "${BOLD}${GREEN}=================================================================${NC}"
+echo -e "  PhishGuard is running permanently in the background."
+echo -e "  No terminal window needs to stay open."
+echo -e "  To stop the background service anytime, run:  ${CYAN}./stop.sh${NC}"
+echo -e "${BOLD}${GREEN}=================================================================${NC}"
+echo ""
+exit 0

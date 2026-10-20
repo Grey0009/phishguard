@@ -50,12 +50,17 @@ def build_full_zip():
         "benchmarks",
         "demo",
         "docs",
-        "start.sh",
+        "install.bat",
         "start.bat",
+        "stop.bat",
         "run_windows.ps1",
+        "stop_windows.ps1",
+        "start.sh",
+        "stop.sh",
         "Dockerfile",
         "docker-compose.yml",
         "README.md",
+        "LICENSE",
         ".gitignore",
     ]
 

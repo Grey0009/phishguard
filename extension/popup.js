@@ -571,7 +571,7 @@ function render(state) {
     setGauge(0, "#8e8e93");
     if ($("error")) {
       $("error").hidden = false;
-      $("error").textContent = "Backend offline (" + (state.error || "no response") + "). Start python run.py";
+      $("error").textContent = "Backend offline (" + (state.error || "no response") + "). Run start.bat or start.sh";
     }
     updateNutritionMatrix(null);
     return;

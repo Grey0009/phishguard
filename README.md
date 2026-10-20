@@ -11,38 +11,43 @@
 
 ---
 
-## ⚡ 30-Second Quick Start (Beginner Friendly)
+## ⚡ 1-Click Quick Start (Zero Terminal Needed)
 
-You do **not** need to manually configure environments or install complex packages. Everything is automated with 1-click launchers.
+You do **not** need to manually configure environments, install complex packages, or keep a terminal window open. Everything runs silently in the background as a lightweight system service.
 
-### Step 1: Start the Backend Server (1-Click)
+### Step 1: Run the 1-Click Installer
+
+* **On Windows:**
+  Double-click **`install.bat`** (or `start.bat`) in File Explorer.
+  * Silently installs Python & dependencies if missing.
+  * Starts the backend engine silently via `pythonw.exe` (**zero open terminal windows**).
+  * Auto-configures Windows Startup so PhishGuard starts seamlessly on login.
+  * Automatically copies the `extension/` folder path to your clipboard.
+  * Automatically opens your default browser to `chrome://extensions` (or `edge://extensions`).
+  * The installer window automatically closes itself when finished!
 
 * **On macOS or Linux:**
   Double-click `start.sh` or run in your terminal:
   ```bash
   ./start.sh
   ```
-* **On Windows:**
-  Double-click `start.bat` in File Explorer.
-* **Using Docker (Optional):**
-  ```bash
-  docker compose up
-  ```
+  * Configures dependencies, launches the background daemon silently, copies the extension path to your clipboard, opens your browser, and exits cleanly.
 
-> *The script will automatically configure Python, set up an isolated virtual environment, install necessary libraries, and launch the PhishGuard server at `http://127.0.0.1:8000`.*
+* **To Stop the Background Engine Anytime:**
+  * **Windows:** Double-click `stop.bat`
+  * **macOS / Linux:** Run `./stop.sh`
 
 ---
 
-### Step 2: Install the Browser Extension (60 Seconds)
+### Step 2: Add Extension to Your Browser (5 Seconds)
 
-1. Open any Chromium browser (Google Chrome, Brave, Microsoft Edge, Opera, or Arc) and navigate to:
-   * **Chrome / Brave / Arc:** `chrome://extensions`
-   * **Edge:** `edge://extensions`
-2. Turn **ON** the **Developer mode** toggle in the top-right corner.
-3. Click the **Load unpacked** button in the top-left corner.
-4. Select the **`extension/`** folder inside this repository.
+When you run the installer, your browser automatically opens to `chrome://extensions`:
+1. Turn **ON** the **Developer mode** toggle in the top-right corner.
+2. Click **Load unpacked** in the top-left corner.
+3. Press **Ctrl+V** (or **Cmd+V**) — the folder path is already in your clipboard!
+4. Click **Select Folder** (or Open).
 
-**That's it!** Navigate to any website (e.g. YouTube, GitHub, or any test page) and click the PhishGuard shield icon in your toolbar to see live telemetry.
+**Done!** PhishGuard is now permanently active in your browser toolbar without needing any terminal window open. Navigate anywhere or click the shield icon to inspect websites in real time.
 
 ---
 
