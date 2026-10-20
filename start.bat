@@ -148,25 +148,59 @@ if not exist "!DEPS_FLAG!" (
 )
 
 rem ------------------------------------------------------------------------------
-rem 3. AUTO-LAUNCH BROWSER WITH PHISHGUARD EXTENSION ALREADY LOADED
+rem 3. AUTO-LAUNCH USER'S DEFAULT BROWSER WITH PHISHGUARD EXTENSION
 rem ------------------------------------------------------------------------------
 echo.
 echo ===================================================================
-echo [✓] Launching browser with PhishGuard extension automatically loaded...
+echo [✓] Detecting your default browser and loading PhishGuard...
 echo ===================================================================
 
 set "BROWSER_FOUND=0"
+set "DEFAULT_BROWSER="
 
-rem Check Google Chrome
-for %%B in (
-    "%ProgramFiles%\Google\Chrome\Application\chrome.exe"
-    "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
-    "%LocalAppData%\Google\Chrome\Application\chrome.exe"
-) do (
-    if !BROWSER_FOUND! equ 0 if exist %%B (
-        start "" %%B --load-extension="%EXT_DIR%" "http://127.0.0.1:8000"
+rem Query Windows Registry for user's selected default HTTP browser
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$b = ''; " ^
+  "$p = (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\Shell\Associations\UrlAssociations\http\UserChoice' -ErrorAction SilentlyContinue).ProgId; " ^
+  "if ($p) { " ^
+  "  $c = (Get-ItemProperty \"Registry::HKEY_CLASSES_ROOT\$p\shell\open\command\" -ErrorAction SilentlyContinue).'(default)'; " ^
+  "  if ($c -match '\"([^\"]+\.exe)\"') { $b = $matches[1] } elseif ($c -match '([^\s]+\.exe)') { $b = $matches[1] }; " ^
+  "} " ^
+  "if ($b -and (Test-Path $b)) { [IO.File]::WriteAllText(\"$env:TEMP\pg_def_browser.txt\", $b) }" >nul 2>&1
+
+if exist "%TEMP%\pg_def_browser.txt" (
+    set /p DEFAULT_BROWSER=<"%TEMP%\pg_def_browser.txt"
+    del "%TEMP%\pg_def_browser.txt" >nul 2>&1
+)
+
+rem If user's default browser was found:
+if defined DEFAULT_BROWSER (
+    rem Check if default browser is Firefox (non-Chromium)
+    echo !DEFAULT_BROWSER! | findstr /i "firefox" >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo [*] Your default browser is Firefox (non-Chromium).
+        echo [*] Launching PhishGuard in your installed Chromium browser...
+    ) else (
+        start "" "!DEFAULT_BROWSER!" --load-extension="%EXT_DIR%" "http://127.0.0.1:8000"
         set "BROWSER_FOUND=1"
-        echo [*] Loaded into Google Chrome.
+        echo [*] Successfully loaded PhishGuard into your default browser:
+        echo     !DEFAULT_BROWSER!
+    )
+)
+
+rem If default browser was not Chromium or not resolved, launch installed Chromium browser
+if !BROWSER_FOUND! equ 0 (
+    rem Check Google Chrome
+    for %%B in (
+        "%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+        "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+        "%LocalAppData%\Google\Chrome\Application\chrome.exe"
+    ) do (
+        if !BROWSER_FOUND! equ 0 if exist %%B (
+            start "" %%B --load-extension="%EXT_DIR%" "http://127.0.0.1:8000"
+            set "BROWSER_FOUND=1"
+            echo [*] Loaded into Google Chrome.
+        )
     )
 )
 
@@ -184,7 +218,7 @@ if !BROWSER_FOUND! equ 0 (
     )
 )
 
-rem Check Microsoft Edge (pre-installed on Windows 10/11)
+rem Check Microsoft Edge (pre-installed on 100% of Windows 10/11 PCs)
 if !BROWSER_FOUND! equ 0 (
     for %%B in (
         "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"

@@ -98,14 +98,44 @@ echo ""
 (
   sleep 1.2
   if [ "$(uname)" = "Darwin" ]; then
-    if [ -d "/Applications/Google Chrome.app" ]; then
+    DEF_APP=$(python3 -c "
+import subprocess, re
+try:
+    p = subprocess.run(['defaults', 'read', 'com.apple.LaunchServices/com.apple.launchservices.secure', 'LSHandlers'], capture_output=True, text=True)
+    m = re.findall(r'LSHandlerURLScheme = (?:http|https);.*?LSHandlerRoleAll = \"?([^\";\s]+)', p.stdout, re.DOTALL)
+    if m:
+        b = m[0].lower()
+        if 'chrome' in b: print('Google Chrome')
+        elif 'brave' in b: print('Brave Browser')
+        elif 'edge' in b: print('Microsoft Edge')
+        elif 'arc' in b: print('Arc')
+        elif 'opera' in b: print('Opera')
+except Exception:
+    pass
+" 2>/dev/null || true)
+
+    if [ -n "$DEF_APP" ] && [ -d "/Applications/$DEF_APP.app" ]; then
+      open -a "$DEF_APP" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
+    elif [ -d "/Applications/Google Chrome.app" ]; then
       open -a "Google Chrome" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
     elif [ -d "/Applications/Brave Browser.app" ]; then
       open -a "Brave Browser" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
     elif [ -d "/Applications/Microsoft Edge.app" ]; then
       open -a "Microsoft Edge" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
+    elif [ -d "/Applications/Arc.app" ]; then
+      open -a "Arc" --args --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" 2>/dev/null || true
     fi
   elif [ "$(uname)" = "Linux" ]; then
+    if command -v xdg-settings >/dev/null 2>&1; then
+      DEF_LINUX=$(xdg-settings get default-web-browser 2>/dev/null || true)
+      if echo "$DEF_LINUX" | grep -iq "chrome"; then
+        google-chrome --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+      elif echo "$DEF_LINUX" | grep -iq "brave"; then
+        brave-browser --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+      elif echo "$DEF_LINUX" | grep -iq "edge"; then
+        microsoft-edge --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
+      fi
+    fi
     if command -v google-chrome >/dev/null 2>&1; then
       google-chrome --load-extension="$ROOT_DIR/extension" "http://127.0.0.1:8000" >/dev/null 2>&1 &
     elif command -v brave-browser >/dev/null 2>&1; then
