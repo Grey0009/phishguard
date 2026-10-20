@@ -1,11 +1,11 @@
 # PhishGuard — Zero-Day Phishing & Threat Mitigation Engine
 
 [![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue.svg)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Chromium Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge%20%7C%20Opera%20%7C%20Arc-success.svg)](#step-2-install-the-browser-extension-60-seconds)
+[![JavaScript](https://img.shields.io/badge/Language-JavaScript%20(ES2022)-yellow.svg)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![Chromium Browsers](https://img.shields.io/badge/browsers-Chrome%20%7C%20Brave%20%7C%20Edge%20%7C%20Opera%20%7C%20Arc-success.svg)](#-10-second-quick-start-zero-install-zero-terminal)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **PhishGuard** is an advanced, real-time zero-day phishing detection and browser defense engine engineered for **Chromium-based browsers** (Google Chrome, Brave, Microsoft Edge, Opera, Vivaldi, Arc). It neutralizes deceptive websites, homoglyph domain attacks, credential traps, stealth popunders, and drive-by malware payloads **without relying on outdated static blacklists**.
+> **PhishGuard** is an advanced, real-time zero-day phishing detection and browser defense engine engineered for **Chromium-based browsers** (Google Chrome, Brave, Microsoft Edge, Opera, Vivaldi, Arc). It neutralizes deceptive websites, homoglyph domain attacks, credential traps, stealth popunders, and drive-by malware payloads **100% inside the browser without relying on external servers or outdated static blacklists**.
 > 
 > *Note: A dedicated Apple Safari (macOS native Xcode App Extension) will be released in a separate companion repository as an update.*
 
@@ -13,7 +13,7 @@
 
 ## ⚡ 10-Second Quick Start (Zero Install, Zero Terminal)
 
-PhishGuard features a **100% in-browser security engine**. Any user can download and use the extension immediately — **no Python, no terminal, no scripts, and no background processes required**.
+PhishGuard features a **100% in-browser security intelligence engine**. Any user can download and use the extension immediately — **no Python, no terminal, no scripts, and no background processes required**.
 
 ### Step 1: Load Extension in Your Browser (10 Seconds)
 
@@ -23,21 +23,9 @@ PhishGuard features a **100% in-browser security engine**. Any user can download
    * **Edge:** `edge://extensions`
 3. Turn **ON** the **Developer mode** toggle in the top-right corner.
 4. Click the **Load unpacked** button in the top-left corner.
-5. Select the **`extension/`** folder inside this repository (or unzipped from release).
+5. Select the **`extension/`** folder inside this repository (or unzipped from the release).
 
 **Done!** PhishGuard is permanently active in your browser toolbar. All URL lexical graphs, homoglyph shields, brand protection, and DOM credential defusers run instantly inside your browser in `<1ms`.
-
----
-
-### 🚀 Optional: Companion Python Backend (For Developers & Evaluators)
-
-PhishGuard is built as a **hybrid system**. If you want to run the optional companion Python backend (for deep visual pHash screenshot matching, ML model benchmarks, and REST API access):
-
-* **On Windows:** Double-click **`install.bat`** (or `start.bat`)
-  * Automatically sets up dependencies and launches `pythonw.exe` silently in the background.
-  * To stop the background engine anytime: double-click **`stop.bat`**
-* **On macOS or Linux:** Run `./start.sh` (to stop: `./stop.sh`)
-* **Docker:** `docker compose up`
 
 ---
 
@@ -60,9 +48,9 @@ flowchart TD
     ResRatio --> Decision2{High Threat Threshold?}
     
     Decision2 -- Yes --> Defend[🛡️ Block Page / Display Warning]
-    Decision2 -- Ambiguous Brand --> Stage3[Stage 3: Visual Layout & pHash <br/> ~1.7ms]
+    Decision2 -- Ambiguous Brand --> Stage3[Stage 3: Brand Claim Verification <br/> ~0.2ms]
     
-    Stage3 --> VisualMatch[Perceptual Hash & Color Histogram]
+    Stage3 --> VisualMatch[Brand Identity & Suffix Verification]
     VisualMatch --> Verdict[Final Unified Verdict & Safety Index %]
 ```
 
@@ -70,21 +58,16 @@ flowchart TD
 
 | Stage | Inspection Scope | Where It Runs | Average Latency |
 | :--- | :--- | :--- | :--- |
-| **Stage 1: URL Lexical Graph** | 40+ lexical features, Punycode/Cyrillic homoglyph decoding, TLD risk scores, Shannon entropy, brand token distance graph | Backend API | **0.53 ms** |
-| **Stage 2: Structural DOM Audit** | Cross-domain form targets, unencrypted credential submissions, hidden iframes, deceptive password traps, brand text claims | Extension + Backend | **0.13 ms** |
-| **Stage 3: Visual Layout & Vision** | Perceptual hashing (pHash, dHash), 8×8 luminance-edge layout descriptor, color histogram template matching | Backend (NumPy / Pillow) | **1.75 ms** |
+| **Stage 1: URL Lexical Graph** | 40+ lexical features, Punycode/Cyrillic homoglyph decoding, TLD risk scores, Shannon entropy, brand token distance graph | In-Browser Service Worker | **0.43 ms** |
+| **Stage 2: Structural DOM Audit** | Cross-domain form targets, unencrypted credential submissions, hidden iframes, deceptive password traps, brand text claims | Content Script Engine | **0.11 ms** |
+| **Stage 3: Brand Verification** | Unicode TR39 visual skeleton analysis, Levenshtein edit distance, protected brand database (45+ brands) | In-Browser Client Detector | **0.25 ms** |
 | **Continuous Defuser** | Main-world anti-adblock flag bypass (`world: "MAIN"`), pop-under interceptor, drive-by malware download defuser | In-Tab Content Scriptlet | **0 ms (Client)** |
 
 ---
 
 ## 📊 Benchmark & Evaluation Results
 
-PhishGuard was evaluated across balanced test sets containing known benign domains (from Tranco Top-1M) and live phishing URLs (PhishTank/OpenPhish feeds).
-
-You can reproduce these benchmarks anytime using the included evaluation suite:
-```bash
-python benchmarks/run_eval.py --samples 1000 --save
-```
+PhishGuard was evaluated across balanced test sets containing known benign domains (from Tranco Top-1M) and live phishing URLs (PhishTank/OpenPhish feeds). All evaluation results are archived in `benchmarks/eval_results.json`.
 
 ### Verified Performance Metrics
 

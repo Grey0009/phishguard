@@ -45,20 +45,10 @@ def build_full_zip():
         out_zip.unlink()
 
     included_items = [
-        "backend",
         "extension",
-        "benchmarks",
         "demo",
         "docs",
-        "install.bat",
-        "start.bat",
-        "stop.bat",
-        "run_windows.ps1",
-        "stop_windows.ps1",
-        "start.sh",
-        "stop.sh",
-        "Dockerfile",
-        "docker-compose.yml",
+        "benchmarks",
         "README.md",
         "LICENSE",
         ".gitignore",
