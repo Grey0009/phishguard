@@ -484,13 +484,20 @@
       let isMismatch = false;
       let mismatchClaim = "";
       if (aEl) {
-        const txt = (aEl.innerText || aEl.textContent || "").trim().toLowerCase();
-        const m = txt.match(/([a-z0-9-]+\.(?:com|org|net|co|in|edu|gov|io|ai|app|xyz|me))/i);
-        if (m) {
-          const claimed = m[1].toLowerCase();
-          if (regDomain(claimed) !== regDomain(host)) {
-            isMismatch = true;
-            mismatchClaim = claimed;
+        const txt = (aEl.innerText || aEl.textContent || "").trim();
+        // A link is a deceptive anchor trap if the visible text is formatted as a URL or domain
+        // (e.g. "https://chase.com/login", "www.paypal.com", "apple.com")
+        // but the href actually directs to a completely different domain.
+        const urlLikePattern = /^(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+\.[a-z]{2,})(?:\/[^\s]*)?$/i;
+        const trimmed = txt.replace(/\s+/g, " ").trim();
+        if (urlLikePattern.test(trimmed)) {
+          const match = trimmed.match(urlLikePattern);
+          if (match) {
+            const claimed = match[1].toLowerCase();
+            if (regDomain(claimed) !== regDomain(host)) {
+              isMismatch = true;
+              mismatchClaim = claimed;
+            }
           }
         }
       }

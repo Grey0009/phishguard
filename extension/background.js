@@ -459,6 +459,11 @@ chrome.webNavigation.onHistoryStateUpdated.addListener(async (d) => {   // SPA r
 });
 
 chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  const currentUrl = info.url || (tab && tab.url);
+  if (currentUrl && isHttp(currentUrl) && stripHash(tabUrl.get(tabId)) !== stripHash(currentUrl)) {
+    tabUrl.set(tabId, currentUrl);
+    urlFlow(tabId, currentUrl, bump(tabId));
+  }
   if (info.status === "complete" && isHttp(tab.url)) deepScan(tabId);
 });
 
@@ -563,11 +568,13 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
         if (!tabId) return null;
         let st = await loadState(tabId);
-        if (!st || !st.result) {
-          const t = await chrome.tabs.get(tabId).catch(() => null);
-          const tUrl = t && (t.url || t.pendingUrl);
+        const t = await chrome.tabs.get(tabId).catch(() => null);
+        const tUrl = t && (t.url || t.pendingUrl);
+        const isStale = !st || !st.result || (tUrl && st.url && stripHash(st.url) !== stripHash(tUrl));
+        if (isStale) {
           if (t && isHttp(tUrl)) {
             const seq = bump(tabId);
+            tabUrl.set(tabId, tUrl);
             await urlFlow(tabId, tUrl, seq);
             st = await loadState(tabId);
             deepScan(tabId);

@@ -64,7 +64,12 @@
     { name: "Chase", keywords: ["chase", "jpmorgan"], domains: ["chase.com", "jpmorgan.com"] },
     { name: "Bank of America", keywords: ["bankofamerica", "bofa"], domains: ["bankofamerica.com", "bofa.com"] },
     { name: "Wells Fargo", keywords: ["wellsfargo"], domains: ["wellsfargo.com"] },
-    { name: "Citibank", keywords: ["citibank", "citi"], domains: ["citi.com", "citibank.com"] }
+    { name: "Citibank", keywords: ["citibank", "citi"], domains: ["citi.com", "citibank.com"] },
+    { name: "Udemy", keywords: ["udemy"], domains: ["udemy.com"] },
+    { name: "Wikipedia", keywords: ["wikipedia"], domains: ["wikipedia.org"] },
+    { name: "Reddit", keywords: ["reddit"], domains: ["reddit.com"] },
+    { name: "Stack Overflow", keywords: ["stackoverflow"], domains: ["stackoverflow.com"] },
+    { name: "Brave", keywords: ["brave"], domains: ["brave.com"] }
   ];
 
   // ─── 2. REPUTATION & TLD HEURISTICS ───────────────────────────────────────
@@ -72,7 +77,15 @@
     "tk", "ml", "ga", "cf", "gq", "xyz", "top", "click", "zip", "mov", "work",
     "support", "rest", "icu", "buzz", "cyou", "cfd", "sbs", "country", "kim",
     "loan", "men", "party", "review", "stream", "download", "racing", "win",
-    "bid", "date", "cam", "monster", "quest"
+    "bid", "date", "cam", "monster", "quest", "mobi", "info", "pro", "cc",
+    "vip", "live", "link", "surf", "space", "club", "fit", "fun", "uno", "pw", "ws"
+  ]);
+
+  const PIRACY_MALWARE_TOKENS = new Set([
+    "moviesflix", "filmyzilla", "filmy4wap", "9xmovies", "tamilrockers", "123movies",
+    "fmovies", "putlocker", "torrent", "warez", "crack", "keygen", "modapk", "freeapk",
+    "freemovie", "watchfree", "moviesda", "kuttymovies", "isaimini", "pagalworld",
+    "themoviesflix"
   ]);
 
   const KEYWORDS = new Set([
@@ -477,7 +490,7 @@
     if (legit) {
       return {
         verdict: "safe",
-        risk: 0.02,
+        risk: 0.0,
         brand: legit.name,
         stage: "url",
         host: p.host,
@@ -528,7 +541,13 @@
 
     const tld = p.suffix ? p.suffix.split(".").pop() : "";
     if (SUSPICIOUS_TLDS.has(tld)) {
-      add("SUSPICIOUS_TLD", `Top-level domain .${tld} is frequently abused for phishing`, 1.5);
+      add("SUSPICIOUS_TLD", `Top-level domain .${tld} is frequently abused for phishing, spam, and piracy`, 1.8);
+    }
+
+    // Unauthorized media piracy / download lures
+    const piracyHits = hostTokens.filter(t => PIRACY_MALWARE_TOKENS.has(t) || Array.from(PIRACY_MALWARE_TOKENS).some(tok => t.includes(tok)));
+    if (piracyHits.length > 0) {
+      add("PIRACY_MALWARE_LURE", `Domain uses unauthorized media piracy or download lure tokens (${piracyHits.slice(0, 2).join(", ")})`, 2.2);
     }
 
     if (SHORTENERS.has(p.registrable)) {
@@ -591,6 +610,11 @@
       if ((k === "sld_token" || k === "typosquat") && (SUSPICIOUS_TLDS.has(tld) || p.shared_hosting)) {
         add("BRAND_ABUSED_TLD", `Brand ${nm} combined with high-risk TLD or free hosting`, 1.8);
       }
+    }
+
+    // If an unknown domain has zero threat points, it is clean but unverified (exercise standard caution)
+    if (points === 0.0) {
+      add("UNVERIFIED_DOMAIN", "Domain is clean but unverified third-party (standard caution)", 0.35);
     }
 
     const score = squash(points, 4.5);
@@ -750,6 +774,16 @@
       add("PASSWORD_OVER_HTTP", "Password input field hosted on an unencrypted HTTP page", 1.5);
     }
 
+    const DB_ERROR_SIGNATURES = [
+      "mysql error", "sql syntax", "error in file:", "errcode: 28", "no space left on device",
+      "sql query: select", "warning: mysql_", "warning: mysqli_", "warning: pg_",
+      "fatal error: uncaught", "database connection failed", "ora-01756", "sqlite_error"
+    ];
+    const hasDbError = DB_ERROR_SIGNATURES.some(sig => text.includes(sig) || title.includes(sig));
+    if (hasDbError) {
+      add("SERVER_SQL_ERROR", "Server leaks internal database / SQL error traces (unstable or compromised host)", 2.4);
+    }
+
     const score = squash(points, 5.0);
     return {
       score: +score.toFixed(3),
@@ -789,6 +823,8 @@
       fusedRisk = Math.max(fusedRisk, 0.88);
     } else if (urlStrong && domClaim) {
       fusedRisk = Math.max(fusedRisk, 0.82);
+    } else if (domRes.reasons.some(r => r.code === "SERVER_SQL_ERROR")) {
+      fusedRisk = Math.max(fusedRisk, 0.65);
     }
 
     // Clean baseline preservation: If both URL and DOM have 0 threat points, guarantee 0 risk

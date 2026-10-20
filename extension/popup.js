@@ -605,11 +605,14 @@ function render(state) {
   if ($("pctUnit")) $("pctUnit").style.display = "inline";
   setGauge(pct, color);
 
-  let hostLabel = (r && (r.registrable_domain || r.host)) || "";
-  if (!hostLabel && tab && tab.url) {
+  let hostLabel = "";
+  if (tab && tab.url) {
     try { hostLabel = new URL(tab.url).hostname; } catch (_) {}
   }
-  $("domain").textContent = hostLabel || "Active Web Page";
+  if (!hostLabel) {
+    hostLabel = (r && (r.registrable_domain || r.host)) || "Active Web Page";
+  }
+  $("domain").textContent = hostLabel;
 
   const stageName = (r && (r.stage || (r.reasons && r.reasons.some(x => x.code === "allowlisted") ? "allowlist" : "url")) || "url").toUpperCase();
   $("stageMeta").textContent = `Engine: ${stageName} Analysis · ${Math.round(riskVal * 100)}% Threat Risk`;
