@@ -11,43 +11,33 @@
 
 ---
 
-## ⚡ 1-Click Quick Start (Zero Terminal Needed)
+## ⚡ 10-Second Quick Start (Zero Install, Zero Terminal)
 
-You do **not** need to manually configure environments, install complex packages, or keep a terminal window open. Everything runs silently in the background as a lightweight system service.
+PhishGuard features a **100% in-browser security engine**. Any user can download and use the extension immediately — **no Python, no terminal, no scripts, and no background processes required**.
 
-### Step 1: Run the 1-Click Installer
+### Step 1: Load Extension in Your Browser (10 Seconds)
 
-* **On Windows:**
-  Double-click **`install.bat`** (or `start.bat`) in File Explorer.
-  * Silently installs Python & dependencies if missing.
-  * Starts the backend engine silently via `pythonw.exe` (**zero open terminal windows**).
-  * Auto-configures Windows Startup so PhishGuard starts seamlessly on login.
-  * Automatically copies the `extension/` folder path to your clipboard.
-  * Automatically opens your default browser to `chrome://extensions` (or `edge://extensions`).
-  * The installer window automatically closes itself when finished!
+1. Open Google Chrome, Brave, Microsoft Edge, Opera, or Arc.
+2. Navigate to:
+   * **Chrome / Brave / Arc:** `chrome://extensions`
+   * **Edge:** `edge://extensions`
+3. Turn **ON** the **Developer mode** toggle in the top-right corner.
+4. Click the **Load unpacked** button in the top-left corner.
+5. Select the **`extension/`** folder inside this repository (or unzipped from release).
 
-* **On macOS or Linux:**
-  Double-click `start.sh` or run in your terminal:
-  ```bash
-  ./start.sh
-  ```
-  * Configures dependencies, launches the background daemon silently, copies the extension path to your clipboard, opens your browser, and exits cleanly.
-
-* **To Stop the Background Engine Anytime:**
-  * **Windows:** Double-click `stop.bat`
-  * **macOS / Linux:** Run `./stop.sh`
+**Done!** PhishGuard is permanently active in your browser toolbar. All URL lexical graphs, homoglyph shields, brand protection, and DOM credential defusers run instantly inside your browser in `<1ms`.
 
 ---
 
-### Step 2: Add Extension to Your Browser (5 Seconds)
+### 🚀 Optional: Companion Python Backend (For Developers & Evaluators)
 
-When you run the installer, your browser automatically opens to `chrome://extensions`:
-1. Turn **ON** the **Developer mode** toggle in the top-right corner.
-2. Click **Load unpacked** in the top-left corner.
-3. Press **Ctrl+V** (or **Cmd+V**) — the folder path is already in your clipboard!
-4. Click **Select Folder** (or Open).
+PhishGuard is built as a **hybrid system**. If you want to run the optional companion Python backend (for deep visual pHash screenshot matching, ML model benchmarks, and REST API access):
 
-**Done!** PhishGuard is now permanently active in your browser toolbar without needing any terminal window open. Navigate anywhere or click the shield icon to inspect websites in real time.
+* **On Windows:** Double-click **`install.bat`** (or `start.bat`)
+  * Automatically sets up dependencies and launches `pythonw.exe` silently in the background.
+  * To stop the background engine anytime: double-click **`stop.bat`**
+* **On macOS or Linux:** Run `./start.sh` (to stop: `./stop.sh`)
+* **Docker:** `docker compose up`
 
 ---
 

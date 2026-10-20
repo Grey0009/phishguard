@@ -547,34 +547,44 @@ function render(state) {
   $("heroStage").classList.remove("dimmed");
 
   if (!state || !state.result) {
-    if (badge) { badge.className = "verdict-capsule pending"; }
-    if (badgeText) { badgeText.textContent = "Scanning"; }
-    $("riskPct").textContent = "…";
-    if ($("pctUnit")) $("pctUnit").style.display = "none";
-    $("stageMeta").textContent = "Stage: Telemetry Inflight";
-    if (currentTabUrl || (tab && tab.url)) {
-      try {
-        const u = new URL(currentTabUrl || (tab && tab.url));
-        if ($("domain")) $("domain").textContent = u.hostname || "Active Protected Tab";
-      } catch (_) {}
+    if (currentTabUrl && typeof PhishGuardDetector !== "undefined" && /^https?:\/\//i.test(currentTabUrl)) {
+      const liveRes = PhishGuardDetector.analyzeUrl(currentTabUrl);
+      state = { url: currentTabUrl, result: liveRes, ts: Date.now(), error: null };
+    } else {
+      if (badge) { badge.className = "verdict-capsule pending"; }
+      if (badgeText) { badgeText.textContent = "Scanning"; }
+      $("riskPct").textContent = "…";
+      if ($("pctUnit")) $("pctUnit").style.display = "none";
+      $("stageMeta").textContent = "Stage: Telemetry Inflight";
+      if (currentTabUrl) {
+        try {
+          const u = new URL(currentTabUrl);
+          if ($("domain")) $("domain").textContent = u.hostname || "Active Protected Tab";
+        } catch (_) {}
+      }
+      setGauge(30, "#8e8e93");
+      updateNutritionMatrix(null);
+      return;
     }
-    setGauge(30, "#8e8e93");
-    updateNutritionMatrix(null);
-    return;
   }
 
   if (state.error) {
-    if (badge) { badge.className = "verdict-capsule pending"; }
-    if (badgeText) { badgeText.textContent = "Offline"; }
-    $("riskPct").textContent = "–";
-    if ($("pctUnit")) $("pctUnit").style.display = "none";
-    setGauge(0, "#8e8e93");
-    if ($("error")) {
-      $("error").hidden = false;
-      $("error").textContent = "Backend offline (" + (state.error || "no response") + "). Run start.bat or start.sh";
+    if (currentTabUrl && typeof PhishGuardDetector !== "undefined" && /^https?:\/\//i.test(currentTabUrl)) {
+      state.result = PhishGuardDetector.analyzeUrl(currentTabUrl);
+      state.error = null;
+    } else {
+      if (badge) { badge.className = "verdict-capsule pending"; }
+      if (badgeText) { badgeText.textContent = "Offline"; }
+      $("riskPct").textContent = "–";
+      if ($("pctUnit")) $("pctUnit").style.display = "none";
+      setGauge(0, "#8e8e93");
+      if ($("error")) {
+        $("error").hidden = false;
+        $("error").textContent = "Backend offline (" + (state.error || "no response") + ").";
+      }
+      updateNutritionMatrix(null);
+      return;
     }
-    updateNutritionMatrix(null);
-    return;
   }
 
   const r = state.result;
@@ -968,20 +978,35 @@ $("quickGo").addEventListener("click", async () => {
   resArea.innerHTML = '<div style="color:var(--apple-blue);font-size:12px;padding:8px">Analyzing link structure…</div>';
   fitPopupHeight();
 
+  let d = null;
   try {
     const cfg = await chrome.storage.local.get({ apiBase: "http://127.0.0.1:8000", apiKey: "" });
     const base = cfg.apiBase.replace(/\/+$/, "");
     const headers = { "Content-Type": "application/json" };
     if (cfg.apiKey) headers["X-API-Key"] = cfg.apiKey;
 
-    const res = await fetch(base + "/v1/analyze/url", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ url }),
-    });
-    const d = await res.json();
-    if (!res.ok) throw new Error(d.error || res.status);
+    const ctrl = new AbortController();
+    const tId = setTimeout(() => ctrl.abort(), 600);
+    try {
+      const res = await fetch(base + "/v1/analyze/url", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ url }),
+        signal: ctrl.signal
+      });
+      if (res.ok) d = await res.json();
+    } finally {
+      clearTimeout(tId);
+    }
+  } catch (_) {
+    d = null;
+  }
 
+  if (!d && typeof PhishGuardDetector !== "undefined") {
+    d = PhishGuardDetector.analyzeUrl(url);
+  }
+
+  if (d) {
     const verdictColors = { safe: "var(--apple-green)", suspicious: "var(--apple-orange)", phishing: "var(--apple-red)" };
     const vColor = verdictColors[d.verdict] || "var(--label-secondary)";
 
@@ -1003,8 +1028,8 @@ $("quickGo").addEventListener("click", async () => {
         ${reasonsHtml}
       </div>
     `;
-  } catch (e) {
-    resArea.innerHTML = `<div class="error-strip">Inspection failed: ${e.message}</div>`;
+  } else {
+    resArea.innerHTML = `<div class="error-strip">Inspection failed: could not parse URL</div>`;
   }
   $("quickGo").disabled = false;
   fitPopupHeight();

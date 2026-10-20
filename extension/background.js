@@ -1,4 +1,5 @@
 "use strict";
+importScripts("client_detector.js");
 /*
  * PhishGuard service worker (Manifest V3)
  *
@@ -253,9 +254,23 @@ async function maybeBlock(tabId, url, result, settings) {
 async function urlStage(settings, url) {
   const hit = cached(url);
   if (hit) return hit;
-  const result = await api(settings, "/v1/analyze/url", { url, include_graph: true });
-  urlCache.set(url, { ts: Date.now(), result });
-  if (urlCache.size > 500) urlCache.delete(urlCache.keys().next().value);
+  let result = null;
+  try {
+    // Check local or remote backend with fast timeout so navigation is never blocked
+    result = await api(settings, "/v1/analyze/url", { url, include_graph: true }, 600);
+  } catch (_) {
+    // 100% In-browser fallback: zero latency, zero backend requirement
+    if (typeof PhishGuardDetector !== "undefined") {
+      result = PhishGuardDetector.analyzeUrl(url, settings.allowlist || []);
+    }
+  }
+  if (!result && typeof PhishGuardDetector !== "undefined") {
+    result = PhishGuardDetector.analyzeUrl(url, settings.allowlist || []);
+  }
+  if (result) {
+    urlCache.set(url, { ts: Date.now(), result });
+    if (urlCache.size > 500) urlCache.delete(urlCache.keys().next().value);
+  }
   return result;
 }
 
@@ -281,9 +296,16 @@ async function urlFlow(tabId, url, seq) {
   if (await isBypassed(url)) { paint(tabId, "suspicious", "PhishGuard: you chose to proceed on this site"); return; }
   try {
     const result = await urlStage(settings, url);
-    await commit(tabId, url, result, seq, settings);
+    if (result) {
+      await commit(tabId, url, result, seq, settings);
+    }
   } catch (err) {
-    await commitError(tabId, url, err, seq);
+    if (typeof PhishGuardDetector !== "undefined") {
+      const fallback = PhishGuardDetector.analyzeUrl(url, settings.allowlist || []);
+      await commit(tabId, url, fallback, seq, settings);
+    } else {
+      await commitError(tabId, url, err, seq);
+    }
   }
 }
 
@@ -367,7 +389,20 @@ async function deepScan(tabId, force = false) {
     if (first.trusted) { await commit(tabId, url, first, seq, settings); return; }   // never read pages of trusted domains
     const dom = await collectDom(tabId);
     if (!dom) return;
-    let result = await api(settings, "/v1/analyze", { url, dom, include_graph: true });
+    let result = null;
+    try {
+      result = await api(settings, "/v1/analyze", { url, dom, include_graph: true }, 800);
+    } catch (_) {
+      // In-browser structural DOM auditor fallback
+      if (typeof PhishGuardDetector !== "undefined") {
+        result = PhishGuardDetector.analyzeFull(url, dom, settings.allowlist || []);
+      }
+    }
+    if (!result && typeof PhishGuardDetector !== "undefined") {
+      result = PhishGuardDetector.analyzeFull(url, dom, settings.allowlist || []);
+    }
+    if (!result) return;
+
     const wantShot = (result.request_screenshot || settings.mode === "always") && !result.trusted;
     if (!(await commit(tabId, url, result, seq, settings, wantShot))) return;
     if (wantShot) {
@@ -378,11 +413,18 @@ async function deepScan(tabId, force = false) {
         await showUi(tabId, url, result, settings);
         return;
       }
-      result = await api(settings, "/v1/analyze", { url, dom, screenshot_b64: shot, include_graph: true });
-      await commit(tabId, url, result, seq, settings);
+      try {
+        result = await api(settings, "/v1/analyze", { url, dom, screenshot_b64: shot, include_graph: true }, 1500);
+        await commit(tabId, url, result, seq, settings);
+      } catch (_) {}
     }
   } catch (err) {
-    await commitError(tabId, url, err, seq);
+    if (typeof PhishGuardDetector !== "undefined") {
+      const fallback = PhishGuardDetector.analyzeUrl(url, settings.allowlist || []);
+      await commit(tabId, url, fallback, seq, settings);
+    } else {
+      await commitError(tabId, url, err, seq);
+    }
   } finally {
     inflight.delete(key);
   }
